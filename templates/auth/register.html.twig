@@ -1,0 +1,45 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Register - Orbit Forum{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4">Create Account</h2>
+
+                    {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+
+                        {{ form_errors(form) }}
+
+                        <div class="mb-3">
+                            {{ form_row(form.username, {'attr': {'class': 'form-control'}}) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_row(form.email, {'attr': {'class': 'form-control'}}) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_row(form.plainPassword, {'attr': {'class': 'form-control'}}) }}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form_row(form.agreeTerms, {'attr': {'class': 'form-check-input'}}) }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Register</button>
+
+                    {{ form_end(form) }}
+
+                    <div class="text-center">
+                        <p class="mb-0">Already have an account? <a href="{{ path('app_login') }}">Login here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
