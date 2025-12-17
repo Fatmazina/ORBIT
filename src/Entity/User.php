@@ -187,6 +187,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $emailVerifiedAt = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $passwordResetToken = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $passwordResetRequestedAt = null;
+
     public function isEmailVerified(): bool
     {
         return $this->isEmailVerified;
@@ -212,6 +218,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmailVerifiedAt(?\DateTimeImmutable $date): static
     {
         $this->emailVerifiedAt = $date;
+        return $this;
+    }
+
+    public function getPasswordResetToken(): ?string
+    {
+        return $this->passwordResetToken;
+    }
+    public function setPasswordResetToken(?string $token): static
+    {
+        $this->passwordResetToken = $token;
+        return $this;
+    }
+    public function getPasswordResetRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->passwordResetRequestedAt;
+    }
+    public function setPasswordResetRequestedAt(?\DateTimeImmutable $date): static
+    {
+        $this->passwordResetRequestedAt = $date;
         return $this;
     }
 }

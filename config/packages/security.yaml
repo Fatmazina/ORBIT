@@ -45,6 +45,8 @@ security:
           - { path: ^/auth/login, roles: PUBLIC_ACCESS }
           - { path: ^/auth/register, roles: PUBLIC_ACCESS }
           - { path: ^/auth/verify-email, roles: PUBLIC_ACCESS }
+          - { path: ^/auth/forgot-password, roles: PUBLIC_ACCESS }
+          - { path: ^/auth/reset-password, roles: PUBLIC_ACCESS }
           - { path: ^/, roles: ROLE_USER }
 
 when@test:

@@ -154,6 +154,65 @@ class AuthController extends AbstractController
     {
     }
 
+    #[Route('/forgot-password', name: 'app_forgot_password', methods: ['GET', 'POST'])]
+    public function forgotPassword(
+        Request $request,
+        EntityManagerInterface $em,
+        MailerInterface $mailer,
+        LoggerInterface $logger
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $email = trim((string) $request->request->get('email', ''));
+            if ($email !== '') {
+                $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+                if ($user) {
+                    $token = bin2hex(random_bytes(32));
+                    $user->setPasswordResetToken($token);
+                    $user->setPasswordResetRequestedAt(new \DateTimeImmutable());
+                    $em->flush();
+                    $this->sendPasswordResetEmail($user, $mailer, $logger);
+                }
+            }
+            $this->addFlash('success', 'If an account exists for that email, a reset link has been sent.');
+            return $this->redirectToRoute('app_login');
+        }
+        return $this->render('auth/forgot_password.html.twig');
+    }
+
+    #[Route('/reset-password/{token}', name: 'app_reset_password', methods: ['GET', 'POST'])]
+    public function resetPassword(
+        string $token,
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response {
+        $user = $em->getRepository(User::class)->findOneBy(['passwordResetToken' => $token]);
+        if (!$user) {
+            $this->addFlash('error', 'Invalid or expired reset link.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        if ($request->isMethod('POST')) {
+            $password = (string) $request->request->get('password', '');
+            $confirm = (string) $request->request->get('confirm_password', '');
+            if ($password !== '' && $password === $confirm) {
+                $user->setPassword($passwordHasher->hashPassword($user, $password));
+                $user->setPasswordResetToken(null);
+                $user->setPasswordResetRequestedAt(null);
+                $em->flush();
+                $this->addFlash('success', 'Your password has been reset. You can now login.');
+                return $this->redirectToRoute('app_login');
+            } else {
+                $this->addFlash('error', 'Passwords do not match.');
+            }
+        }
+
+        return $this->render('auth/reset_password.html.twig', [
+            'token' => $token,
+            'email' => $user->getEmail(),
+        ]);
+    }
+
     private function sendVerificationEmail(User $user, MailerInterface $mailer, LoggerInterface $logger): void
     {
         $verificationUrl = $this->generateUrl('app_verify_email', [
@@ -177,6 +236,30 @@ class AuthController extends AbstractController
         } catch (\Throwable $e) {
             // log failure so it can be inspected in logs; keep user flow intact
             $logger->error('Verification email failed: ' . $e->getMessage());
+        }
+    }
+
+    private function sendPasswordResetEmail(User $user, MailerInterface $mailer, LoggerInterface $logger): void
+    {
+        $resetUrl = $this->generateUrl('app_reset_password', [
+            'token' => $user->getPasswordResetToken(),
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        $email = (new Email())
+            ->from('noreply@orbit-forum.com')
+            ->to($user->getEmail())
+            ->subject('Reset your Orbit Forum password')
+            ->html(sprintf(
+                '<p>You requested a password reset.</p>
+                <p>Click the link below to reset your password:</p>
+                <a href="%s">Reset Password</a>',
+                $resetUrl
+            ));
+
+        try {
+            $mailer->send($email);
+        } catch (\Throwable $e) {
+            $logger->error('Password reset email failed: ' . $e->getMessage());
         }
     }
 }
