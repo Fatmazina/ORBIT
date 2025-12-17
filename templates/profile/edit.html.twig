@@ -1,0 +1,49 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4">Edit Profile</h2>
+                    <form method="post" action="{{ path('app_profile_edit') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" name="username" id="username" class="form-control" value="{{ user.username }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea name="bio" id="bio" class="form-control" rows="4">{{ user.bio }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile_image" class="form-label">Profile Image</label>
+                            {% if user.profileImage %}
+                                <div class="mb-2">
+                                    <img src="{{ user.profileImage }}" alt="Profile Image" class="img-thumbnail" style="max-height: 120px;">
+                                </div>
+                            {% endif %}
+                            <input type="file" name="profile_image" id="profile_image" class="form-control">
+                        </div>
+                        <hr class="my-4">
+                        <h5 class="mb-3">Change Password</h5>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" name="new_password" id="new_password" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" name="confirm_password" id="confirm_password" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-center mt-3">
+        <a href="{{ path('app_profile', { id: user.id }) }}">Back to profile</a>
+    </div>
+{% endblock %}
