@@ -18,6 +18,7 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            user_checker: App\Security\UserChecker
             form_login:
                 login_path: app_login
                 check_path: app_login
@@ -47,6 +48,7 @@ security:
           - { path: ^/auth/verify-email, roles: PUBLIC_ACCESS }
           - { path: ^/auth/forgot-password, roles: PUBLIC_ACCESS }
           - { path: ^/auth/reset-password, roles: PUBLIC_ACCESS }
+          - { path: ^/admin, roles: ROLE_ADMIN }
           - { path: ^/, roles: ROLE_USER }
 
 when@test:
