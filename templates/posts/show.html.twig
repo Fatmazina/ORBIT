@@ -10,7 +10,10 @@
             <span class="badge bg-danger">{{ dislikes }} dislikes</span>
         </div>
     </div>
-    <p class="text-muted mb-2">by {{ post.author.username }} in {{ post.category.name }} • {{ post.createdAt|date('Y-m-d H:i') }}</p>
+    <div class="d-flex align-items-center mb-2">
+        <img src="{{ post.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+        <p class="text-muted mb-0">by {{ post.author.username }} in {{ post.category.name }} • {{ post.createdAt|date('Y-m-d H:i') }}</p>
+    </div>
     <div class="card mb-3">
         <div class="card-body">
             <p class="mb-0">{{ post.content }}</p>

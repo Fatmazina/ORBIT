@@ -8,18 +8,28 @@
             <a href="{{ path('app_posts_create') }}" class="btn btn-primary">Create Post</a>
         {% endif %}
     </div>
-    <div class="list-group">
-        {% for p in posts %}
-            <a class="list-group-item list-group-item-action" href="{{ path('app_posts_show', { id: p.id }) }}">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ p.title }}</h5>
-                    <small>{{ p.createdAt|date('Y-m-d H:i') }}</small>
+    {% for p in posts %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="{{ p.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                    <div>
+                        <div class="fw-bold">{{ p.author.username }}</div>
+                        <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in {{ p.category.name }}</small>
+                    </div>
                 </div>
-                <p class="mb-1 text-muted">by {{ p.author.username }} • {{ p.views }} views</p>
-            </a>
-        {% else %}
-            <div class="alert alert-info">No posts yet.</div>
-        {% endfor %}
-    </div>
+                <h5 class="mb-2">{{ p.title }}</h5>
+                <p class="mb-3">{{ p.content }}</p>
+                <div class="d-flex align-items-center">
+                    <a href="{{ path('app_posts_vote', { id: p.id, type: 'like' }) }}" class="btn btn-outline-success me-2">Like ({{ counts[p.id].like ?? 0 }})</a>
+                    <a href="{{ path('app_posts_vote', { id: p.id, type: 'dislike' }) }}" class="btn btn-outline-danger me-3">Dislike ({{ counts[p.id].dislike ?? 0 }})</a>
+                    <a href="{{ path('app_posts_show', { id: p.id }) }}" class="btn btn-link">Open</a>
+                    <span class="ms-auto text-muted">{{ p.views }} views</span>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No posts yet.</div>
+    {% endfor %}
 </div>
 {% endblock %}

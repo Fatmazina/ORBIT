@@ -18,8 +18,17 @@ class PostController extends AbstractController
     public function index(EntityManagerInterface $em): Response
     {
         $posts = $em->getRepository(Post::class)->findBy([], ['createdAt' => 'DESC']);
+        $voteRepo = $em->getRepository(Vote::class);
+        $counts = [];
+        foreach ($posts as $p) {
+            $counts[$p->getId()] = [
+                'like' => $voteRepo->count(['post' => $p, 'type' => 'like']),
+                'dislike' => $voteRepo->count(['post' => $p, 'type' => 'dislike']),
+            ];
+        }
         return $this->render('posts/index.html.twig', [
             'posts' => $posts,
+            'counts' => $counts,
         ]);
     }
 
