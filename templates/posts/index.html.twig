@@ -1,0 +1,25 @@
+{% extends "base.html.twig" %}
+{% block title %}Posts{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Posts</h2>
+        {% if app.user %}
+            <a href="{{ path('app_posts_create') }}" class="btn btn-primary">Create Post</a>
+        {% endif %}
+    </div>
+    <div class="list-group">
+        {% for p in posts %}
+            <a class="list-group-item list-group-item-action" href="{{ path('app_posts_show', { id: p.id }) }}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ p.title }}</h5>
+                    <small>{{ p.createdAt|date('Y-m-d H:i') }}</small>
+                </div>
+                <p class="mb-1 text-muted">by {{ p.author.username }} • {{ p.views }} views</p>
+            </a>
+        {% else %}
+            <div class="alert alert-info">No posts yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

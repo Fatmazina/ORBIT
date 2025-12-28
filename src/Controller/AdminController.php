@@ -2,6 +2,8 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\Category;
+use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,8 +17,10 @@ class AdminController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $users = $em->getRepository(User::class)->findBy([], ['createdAt' => 'DESC']);
+        $categories = $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']);
         return $this->render('admin/dashboard.html.twig', [
             'users' => $users,
+            'categories' => $categories,
         ]);
     }
 
@@ -43,6 +47,31 @@ class AdminController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'User activated.');
         }
+        return $this->redirectToRoute('app_admin_dashboard');
+    }
+
+    #[Route('/categories/add', name: 'app_admin_add_category', methods: ['POST'])]
+    public function addCategory(Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $name = trim((string) $request->request->get('name', ''));
+        $description = (string) $request->request->get('description', '');
+        if ($name === '') {
+            $this->addFlash('error', 'Category name is required.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+        $existing = $em->getRepository(Category::class)->findOneBy(['name' => $name]);
+        if ($existing) {
+            $this->addFlash('error', 'Category already exists.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+        $cat = new Category();
+        $cat->setName($name);
+        $cat->setDescription($description !== '' ? $description : null);
+        $cat->setCreatedAt(new \DateTimeImmutable());
+        $em->persist($cat);
+        $em->flush();
+        $this->addFlash('success', 'Category added.');
         return $this->redirectToRoute('app_admin_dashboard');
     }
 }

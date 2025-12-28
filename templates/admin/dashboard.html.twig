@@ -44,6 +44,46 @@
             </table>
         </div>
     </div>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Categories</h5>
+            <form method="post" action="{{ path('app_admin_add_category') }}" class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <input type="text" name="name" class="form-control" placeholder="New category name" required>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" name="description" class="form-control" placeholder="Description (optional)">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Add</button>
+                </div>
+            </form>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in categories %}
+                        <tr>
+                            <td>{{ c.id }}</td>
+                            <td>{{ c.name }}</td>
+                            <td>{{ c.description }}</td>
+                            <td>{{ c.createdAt ? c.createdAt|date('Y-m-d H:i') : '' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No categories yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="mt-3">
         <a href="{{ path('app_home') }}" class="btn btn-secondary">Back to home</a>
     </div>

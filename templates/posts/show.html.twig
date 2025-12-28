@@ -1,0 +1,29 @@
+{% extends "base.html.twig" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">{{ post.title }}</h2>
+        <div>
+            <span class="badge bg-secondary">{{ post.views }} views</span>
+            <span class="badge bg-success">{{ likes }} likes</span>
+            <span class="badge bg-danger">{{ dislikes }} dislikes</span>
+        </div>
+    </div>
+    <p class="text-muted mb-2">by {{ post.author.username }} in {{ post.category.name }} • {{ post.createdAt|date('Y-m-d H:i') }}</p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p class="mb-0">{{ post.content }}</p>
+        </div>
+    </div>
+    {% if app.user %}
+        <div class="mb-3">
+            <a href="{{ path('app_posts_vote', { id: post.id, type: 'like' }) }}" class="btn btn-outline-success me-2">Like</a>
+            <a href="{{ path('app_posts_vote', { id: post.id, type: 'dislike' }) }}" class="btn btn-outline-danger">Dislike</a>
+        </div>
+    {% endif %}
+    <div>
+        <a href="{{ path('app_posts') }}" class="btn btn-secondary">Back to posts</a>
+    </div>
+</div>
+{% endblock %}
