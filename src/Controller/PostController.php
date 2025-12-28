@@ -20,15 +20,22 @@ class PostController extends AbstractController
         $posts = $em->getRepository(Post::class)->findBy([], ['createdAt' => 'DESC']);
         $voteRepo = $em->getRepository(Vote::class);
         $counts = [];
+        $userVotes = [];
+        $currentUser = $this->getUser();
         foreach ($posts as $p) {
             $counts[$p->getId()] = [
                 'like' => $voteRepo->count(['post' => $p, 'type' => 'like']),
                 'dislike' => $voteRepo->count(['post' => $p, 'type' => 'dislike']),
             ];
+            if ($currentUser instanceof User) {
+                $existing = $voteRepo->findOneBy(['post' => $p, 'author' => $currentUser]);
+                $userVotes[$p->getId()] = $existing ? $existing->getType() : null;
+            }
         }
         return $this->render('posts/index.html.twig', [
             'posts' => $posts,
             'counts' => $counts,
+            'userVotes' => $userVotes,
         ]);
     }
 
@@ -87,16 +94,22 @@ class PostController extends AbstractController
 
         $likes = $em->getRepository(Vote::class)->count(['post' => $post, 'type' => 'like']);
         $dislikes = $em->getRepository(Vote::class)->count(['post' => $post, 'type' => 'dislike']);
+        $existing = null;
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User) {
+            $existing = $em->getRepository(Vote::class)->findOneBy(['post' => $post, 'author' => $currentUser]);
+        }
 
         return $this->render('posts/show.html.twig', [
             'post' => $post,
             'likes' => $likes,
             'dislikes' => $dislikes,
+            'userVote' => $existing ? $existing->getType() : null,
         ]);
     }
 
     #[Route('/{id<\\d+>}/vote/{type}', name: 'app_posts_vote', methods: ['POST', 'GET'])]
-    public function vote(int $id, string $type, EntityManagerInterface $em): Response
+    public function vote(int $id, string $type, EntityManagerInterface $em, Request $request): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -131,6 +144,10 @@ class PostController extends AbstractController
         }
 
         $em->flush();
+        $from = (string) $request->query->get('from', '');
+        if ($from === 'list' || str_contains((string) $request->headers->get('referer', ''), '/posts')) {
+            return $this->redirectToRoute('app_posts');
+        }
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
 }
