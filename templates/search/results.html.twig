@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Search Results - {{ query }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Search results for "{{ query }}"</h2>
+
+    <div class="row mt-4">
+        <!-- Users Section -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Users</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for user in users %}
+                        <a href="{{ path('app_profile', {id: user.id}) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <img src="{{ user.profileImage ?: asset('images/default-avatar.svg') }}" 
+                                 alt="{{ user.username }}" 
+                                 class="rounded-circle me-3" 
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                            <div>
+                                <h6 class="mb-0">{{ user.username }}</h6>
+                                <small class="text-muted">Joined {{ user.createdAt|date('M Y') }}</small>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="list-group-item text-muted text-center py-4">
+                            No users found matching "{{ query }}"
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-text-fill me-2"></i>Posts</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for post in posts %}
+                            <a href="{{ path('app_posts_show', {id: post.id}) }}" class="list-group-item list-group-item-action p-3">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ post.title }}</h5>
+                                    <small class="text-muted">{{ post.createdAt|date('d/m/Y') }}</small>
+                                </div>
+                                <p class="mb-1 text-muted">{{ post.content|slice(0, 150) }}...</p>
+                                <div class="mt-2 d-flex align-items-center">
+                                    <span class="badge bg-secondary me-2">
+                                        <i class="bi bi-person-fill"></i> {{ post.author.username }}
+                                    </span>
+                                    <small class="text-muted">
+                                        <i class="bi bi-chat-dots"></i> {{ post.comments|length }} comments
+                                    </small>
+                                </div>
+                            </a>
+                        {% else %}
+                            <div class="list-group-item text-muted text-center py-5">
+                                <i class="bi bi-search fs-1 mb-3 d-block"></i>
+                                No posts found matching "{{ query }}"
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ path('app_home') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

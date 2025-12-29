@@ -45,11 +45,13 @@
         <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container">
-<a class="navbar-brand" href="{{ path('app_login') }}">🚀 Orbit Forum</a>                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <a class="navbar-brand" href="{{ path('app_login') }}">🚀 Orbit Forum</a>
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
+                    <ul class="navbar-nav me-auto">
                         {% if app.user %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app_posts') }}">Posts</a>
@@ -70,18 +72,36 @@
                                     <a class="nav-link" href="{{ path('app_moderator_reports') }}">Reports</a>
                                 </li>
                             {% endif %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_logout') }}">Logout</a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_login') }}">Login</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_register') }}">Register</a>
-                            </li>
                         {% endif %}
                     </ul>
+                    
+                    <div class="d-flex align-items-center">
+                        <form class="d-flex me-3" action="{{ path('app_search') }}" method="GET" style="max-width: 300px;">
+                            <div class="input-group input-group-sm">
+                                <input class="form-control border-secondary bg-dark text-white" type="search" name="q" placeholder="Search..." aria-label="Search" value="{{ query|default('') }}">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="bi bi-search text-white"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <ul class="navbar-nav">
+                            {% if app.user %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ path('app_logout') }}">
+                                        <i class="bi bi-box-arrow-right"></i> Logout
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ path('app_login') }}">Login</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ path('app_register') }}">Register</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
                 </div>
             </div>
         </nav>

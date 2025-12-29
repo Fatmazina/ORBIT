@@ -54,6 +54,9 @@ class Post
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $archivedAt = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+
     public function __construct()
     {
         $this->comments = new ArrayCollection();
@@ -98,6 +101,10 @@ class Post
     public function incrementViews(): static { $this->views++; return $this; }
     
     public function getComments(): Collection { return $this->comments; }
+
+    public function getImage(): ?string { return $this->image; }
+    public function setImage(?string $image): static { $this->image = $image; return $this; }
+
     public function getVotes(): Collection { return $this->votes; }
     public function getReports(): Collection { return $this->reports; }
 
