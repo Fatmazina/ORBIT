@@ -154,4 +154,76 @@ class PostController extends AbstractController
         }
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
+    
+    #[Route('/{id<\\d+>}/edit', name: 'app_posts_edit', methods: ['GET', 'POST'])]
+    public function edit(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+        $post = $em->getRepository(Post::class)->find($id);
+        if (!$post) {
+            return $this->redirectToRoute('app_posts');
+        }
+        if ($post->getAuthor()?->getId() !== $user->getId()) {
+            $this->addFlash('error', 'You cannot edit this post.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        if ($request->isMethod('POST')) {
+            $title = trim((string) $request->request->get('title', ''));
+            $content = trim((string) $request->request->get('content', ''));
+            $categoryId = (int) $request->request->get('category_id', 0);
+            if ($title === '' || $content === '' || $categoryId <= 0) {
+                $this->addFlash('error', 'Please fill in all fields.');
+                return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
+            }
+            $category = $em->getRepository(Category::class)->find($categoryId);
+            if (!$category) {
+                $this->addFlash('error', 'Invalid category.');
+                return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
+            }
+            $post->setTitle($title);
+            $post->setContent($content);
+            $post->setCategory($category);
+            $post->setUpdatedAt(new \DateTimeImmutable());
+            $em->flush();
+            $this->addFlash('success', 'Post updated.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $categories = $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']);
+        return $this->render('posts/edit.html.twig', [
+            'post' => $post,
+            'categories' => $categories,
+        ]);
+    }
+    
+    #[Route('/{id<\\d+>}/delete', name: 'app_posts_delete', methods: ['POST', 'GET'])]
+    public function delete(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+        $post = $em->getRepository(Post::class)->find($id);
+        if (!$post) {
+            return $this->redirectToRoute('app_posts');
+        }
+        if ($post->getAuthor()?->getId() !== $user->getId()) {
+            $this->addFlash('error', 'You cannot delete this post.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $authorId = $post->getAuthor()?->getId();
+        $em->remove($post);
+        $em->flush();
+        $this->addFlash('success', 'Post deleted.');
+        $from = (string) $request->query->get('from', '');
+        if ($from === 'profile' && $authorId) {
+            return $this->redirectToRoute('app_profile', ['id' => $authorId]);
+        }
+        if ($from === 'list' || str_contains((string) $request->headers->get('referer', ''), '/posts')) {
+            return $this->redirectToRoute('app_posts');
+        }
+        return $this->redirectToRoute('app_posts');
+    }
 }

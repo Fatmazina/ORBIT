@@ -1,0 +1,27 @@
+{% extends "base.html.twig" %}
+{% block title %}Edit Post{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Edit Post</h2>
+    <form method="post" action="{{ path('app_posts_edit', { id: post.id }) }}">
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" id="title" name="title" class="form-control" value="{{ post.title }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">Content</label>
+            <textarea id="content" name="content" rows="6" class="form-control" required>{{ post.content }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="category_id" class="form-label">Category</label>
+            <select id="category_id" name="category_id" class="form-select" required>
+                <option value="">Select a category</option>
+                {% for c in categories %}
+                    <option value="{{ c.id }}" {% if post.category and post.category.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{{ path('app_posts_show', { id: post.id }) }}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+{% endblock %}

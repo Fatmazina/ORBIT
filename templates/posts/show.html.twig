@@ -26,6 +26,12 @@
             <a href="{{ path('app_posts_vote', { id: post.id, type: 'like' }) }}" class="btn {{ userVote == 'like' ? 'btn-success' : 'btn-outline-success' }} me-2">Like</a>
             <a href="{{ path('app_posts_vote', { id: post.id, type: 'dislike' }) }}" class="btn {{ userVote == 'dislike' ? 'btn-danger' : 'btn-outline-danger' }}">Dislike</a>
         </div>
+        {% if app.user.id == post.author.id %}
+            <div class="mb-3">
+                <a href="{{ path('app_posts_edit', { id: post.id }) }}" class="btn btn-warning me-2">Edit</a>
+                <a href="{{ path('app_posts_delete', { id: post.id }) }}" class="btn btn-danger" onclick="return confirm('Delete this post?')">Delete</a>
+            </div>
+        {% endif %}
     {% endif %}
     <div>
         <a href="{{ path('app_posts') }}" class="btn btn-secondary">Back to posts</a>

@@ -70,6 +70,12 @@
                             <a href="{{ path('app_posts_show', { id: p.id }) }}" class="btn btn-link">Open</a>
                             <span class="ms-auto text-muted">{{ p.views }} views</span>
                         </div>
+                        {% if app.user and app.user.id == profileUser.id %}
+                            <div class="mt-2">
+                                <a href="{{ path('app_posts_edit', { id: p.id }) }}" class="btn btn-warning me-2">Edit</a>
+                                <a href="{{ path('app_posts_delete', { id: p.id, from: 'profile' }) }}" class="btn btn-danger" onclick="return confirm('Delete this post?')">Delete</a>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
