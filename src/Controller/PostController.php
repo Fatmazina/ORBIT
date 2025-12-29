@@ -18,7 +18,13 @@ class PostController extends AbstractController
     public function index(EntityManagerInterface $em, Request $request): Response
     {
         $selected = (array) $request->query->all('categories');
-        if ($selected) {
+        $showAll = (bool) $request->query->get('all', false);
+        if ($showAll) {
+            $posts = $em->getRepository(Post::class)->findAll();
+            if (is_array($posts)) {
+                shuffle($posts);
+            }
+        } elseif ($selected) {
             $qb = $em->createQueryBuilder()
                 ->select('p')
                 ->from(Post::class, 'p')
@@ -52,6 +58,7 @@ class PostController extends AbstractController
             'userVotes' => $userVotes,
             'categories' => $categories,
             'selectedCategories' => array_map('intval', $selected),
+            'showAll' => $showAll,
         ]);
     }
 

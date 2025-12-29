@@ -13,13 +13,19 @@
             <div class="card-body">
                 <div class="d-flex flex-wrap align-items-center">
                     <strong class="me-3">Filter by categories:</strong>
+                    <div class="form-check me-4">
+                        <input class="form-check-input" type="checkbox" name="all" value="1" id="cat_all" {% if selectedCategories is empty and app.request.query.get('all') %}checked{% endif %}>
+                        <label class="form-check-label" for="cat_all">All</label>
+                    </div>
                     {% for c in categories %}
                         <div class="form-check me-3">
                             <input class="form-check-input" type="checkbox" name="categories[]" value="{{ c.id }}" id="cat_{{ c.id }}" {% if c.id in selectedCategories %}checked{% endif %}>
                             <label class="form-check-label" for="cat_{{ c.id }}">{{ c.name }}</label>
                         </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-outline-primary btn-sm ms-auto">Apply</button>
+                    <button type="submit" class="btn btn-outline-primary btn-sm ms-auto" aria-label="Apply">
+                        <i class="bi bi-funnel"></i>
+                    </button>
                 </div>
             </div>
         </div>
