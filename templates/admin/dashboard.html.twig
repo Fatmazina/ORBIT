@@ -102,7 +102,11 @@
                         <tr>
                             <td>{{ p.id }}</td>
                             <td>{{ p.title }}</td>
-                            <td>{{ p.author.username }}</td>
+                            <td>
+                                <a href="{{ path('app_profile', { id: p.author.id }) }}" class="text-decoration-none">
+                                    {{ p.author.username }}
+                                </a>
+                            </td>
                             <td>{{ p.archivedAt ? p.archivedAt|date('Y-m-d H:i') : '' }}</td>
                             <td>
                                 <a href="{{ path('app_posts_show', { id: p.id }) }}" class="btn btn-sm btn-outline-secondary">View</a>
@@ -136,7 +140,11 @@
                     {% for c in archivedComments %}
                         <tr>
                             <td>{{ c.id }}</td>
-                            <td>{{ c.author.username }}</td>
+                            <td>
+                                <a href="{{ path('app_profile', { id: c.author.id }) }}" class="text-decoration-none">
+                                    {{ c.author.username }}
+                                </a>
+                            </td>
                             <td>
                                 <a href="{{ path('app_posts_show', { id: c.post.id }) }}">{{ c.post.title }}</a>
                             </td>
@@ -149,6 +157,53 @@
                     {% else %}
                         <tr>
                             <td colspan="6" class="text-center text-muted">No archived comments.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Reports</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Post</th>
+                        <th>Reporter</th>
+                        <th>Reason</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reports %}
+                        <tr>
+                            <td>{{ r.id }}</td>
+                            <td>
+                                {% if r.reportedPost %}
+                                    <a href="{{ path('app_posts_show', { id: r.reportedPost.id }) }}">{{ r.reportedPost.title }}</a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ path('app_profile', { id: r.reporter.id }) }}" class="text-decoration-none">
+                                    <i class="bi bi-person-circle me-1"></i> {{ r.reporter.username }}
+                                </a>
+                            </td>
+                            <td>{{ r.reason }}</td>
+                            <td>{{ r.createdAt ? r.createdAt|date('Y-m-d H:i') : '' }}</td>
+                            <td>
+                                {% if r.reportedPost %}
+                                    <a href="{{ path('app_posts_show', { id: r.reportedPost.id }) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No reports.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

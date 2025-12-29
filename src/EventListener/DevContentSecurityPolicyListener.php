@@ -21,9 +21,14 @@ class DevContentSecurityPolicyListener implements EventSubscriberInterface
         $csp = $response->headers->get('Content-Security-Policy');
 
         if (!$csp) {
-            // If no CSP is set, add a minimal one allowing unsafe-eval for testing
-            $csp = "script-src 'self' 'unsafe-eval'";
+            // If no CSP is set, add a minimal one allowing unsafe-eval for testing and bootstrap CDN
+            $csp = "script-src 'self' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net";
         } else {
+            if (!str_contains($csp, "cdn.jsdelivr.net")) {
+                $csp = preg_replace_callback("/((?:script|style)-src[^;]*)/i", function ($m) {
+                    return $m[1] . " cdn.jsdelivr.net";
+                }, $csp);
+            }
             if (!str_contains($csp, "'unsafe-eval'")) {
                 // Try to append unsafe-eval to script-src directive if present
                 $csp = preg_replace_callback("/(script-src[^;]*)/i", function ($m) {

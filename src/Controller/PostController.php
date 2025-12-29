@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Entity\Vote;
 use App\Entity\Category;
 use App\Entity\Comment;
+use App\Entity\Report;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -66,7 +67,43 @@ class PostController extends AbstractController
             'commentTotals' => $commentTotals ?? [],
         ]);
     }
-
+    
+    #[Route('/{id<\\d+>}/report', name: 'app_posts_report', methods: ['POST'])]
+    public function report(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+        $post = $em->getRepository(Post::class)->find($id);
+        if (!$post) {
+            return $this->redirectToRoute('app_posts');
+        }
+        if ($post->getAuthor()?->getId() === $user->getId()) {
+            $this->addFlash('error', 'You cannot report your own post.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $reason = (string) $request->request->get('reason', '');
+        $allowed = ['Spam', 'Harassment or hate', 'Pornography', 'Violence', 'Misinformation', 'Other'];
+        if ($reason === '' || !in_array($reason, $allowed, true)) {
+            $this->addFlash('error', 'Please select a valid reason.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $existing = $em->getRepository(Report::class)->findOneBy(['reportedPost' => $post, 'reporter' => $user, 'status' => 'pending']);
+        if ($existing) {
+            $this->addFlash('info', 'You have already reported this post.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $report = new Report();
+        $report->setReporter($user);
+        $report->setReportedPost($post);
+        $report->setReason($reason);
+        $em->persist($report);
+        $em->flush();
+        $this->addFlash('success', 'Report submitted. Our admins will review it.');
+        return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+    }
+    
     #[Route('/create', name: 'app_posts_create', methods: ['GET', 'POST'])]
     public function create(Request $request, EntityManagerInterface $em): Response
     {
