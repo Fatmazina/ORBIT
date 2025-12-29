@@ -38,6 +38,12 @@ class Comment
     #[ORM\OneToMany(targetEntity: Report::class, mappedBy: 'reportedComment', orphanRemoval: true)]
     private Collection $reports;
 
+    #[ORM\Column(type: 'boolean')]
+    private bool $isArchived = false;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $archivedAt = null;
+
     public function __construct()
     {
         $this->votes = new ArrayCollection();
@@ -62,4 +68,8 @@ class Comment
     
     public function getVotes(): Collection { return $this->votes; }
     public function getReports(): Collection { return $this->reports; }
+    public function isArchived(): bool { return $this->isArchived; }
+    public function setIsArchived(bool $archived): static { $this->isArchived = $archived; return $this; }
+    public function getArchivedAt(): ?\DateTimeImmutable { return $this->archivedAt; }
+    public function setArchivedAt(?\DateTimeImmutable $at): static { $this->archivedAt = $at; return $this; }
 }

@@ -49,7 +49,7 @@ class PostController extends AbstractController
                 'like' => $voteRepo->count(['post' => $p, 'type' => 'like']),
                 'dislike' => $voteRepo->count(['post' => $p, 'type' => 'dislike']),
             ];
-            $commentTotals[$p->getId()] = $em->getRepository(Comment::class)->count(['post' => $p]);
+            $commentTotals[$p->getId()] = $em->getRepository(Comment::class)->count(['post' => $p, 'isArchived' => false]);
             if ($currentUser instanceof User) {
                 $existing = $voteRepo->findOneBy(['post' => $p, 'author' => $currentUser]);
                 $userVotes[$p->getId()] = $existing ? $existing->getType() : null;
@@ -129,7 +129,7 @@ class PostController extends AbstractController
         if ($currentUser instanceof User) {
             $existing = $em->getRepository(Vote::class)->findOneBy(['post' => $post, 'author' => $currentUser]);
         }
-        $comments = $em->getRepository(Comment::class)->findBy(['post' => $post], ['createdAt' => 'DESC']);
+        $comments = $em->getRepository(Comment::class)->findBy(['post' => $post, 'isArchived' => false], ['createdAt' => 'DESC']);
         $voteRepo = $em->getRepository(Vote::class);
         $commentCounts = [];
         $commentUserVotes = [];
@@ -287,6 +287,43 @@ class PostController extends AbstractController
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
     
+    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/archive', name: 'app_comments_archive', methods: ['POST', 'GET'])]
+    public function archiveComment(int $postId, int $commentId, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $post = $em->getRepository(Post::class)->find($postId);
+        $comment = $em->getRepository(Comment::class)->find($commentId);
+        if (!$post || !$comment || $comment->getPost()?->getId() !== $post->getId()) {
+            return $this->redirectToRoute('app_posts');
+        }
+        if ($comment->isArchived()) {
+            $this->addFlash('info', 'Comment is already archived.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $comment->setIsArchived(true)->setArchivedAt(new \DateTimeImmutable())->setUpdatedAt(new \DateTimeImmutable());
+        $em->flush();
+        $this->addFlash('success', 'Comment archived.');
+        return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+    }
+    
+    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/unarchive', name: 'app_comments_unarchive', methods: ['POST', 'GET'])]
+    public function unarchiveComment(int $postId, int $commentId, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $post = $em->getRepository(Post::class)->find($postId);
+        $comment = $em->getRepository(Comment::class)->find($commentId);
+        if (!$post || !$comment || $comment->getPost()?->getId() !== $post->getId()) {
+            return $this->redirectToRoute('app_posts');
+        }
+        if (!$comment->isArchived()) {
+            $this->addFlash('info', 'Comment is not archived.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+        $comment->setIsArchived(false)->setArchivedAt(null)->setUpdatedAt(new \DateTimeImmutable());
+        $em->flush();
+        $this->addFlash('success', 'Comment unarchived.');
+        return $this->redirectToRoute('app_admin_dashboard');
+    }
     
     #[Route('/{id<\\d+>}/edit', name: 'app_posts_edit', methods: ['GET', 'POST'])]
     public function edit(int $id, Request $request, EntityManagerInterface $em): Response

@@ -4,6 +4,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Entity\Category;
 use App\Entity\Post;
+use App\Entity\Comment;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,10 +21,12 @@ class AdminController extends AbstractController
         $users = $em->getRepository(User::class)->findBy([], ['createdAt' => 'DESC']);
         $categories = $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']);
         $archivedPosts = $em->getRepository(Post::class)->findBy(['isArchived' => true], ['archivedAt' => 'DESC']);
+        $archivedComments = $em->getRepository(Comment::class)->findBy(['isArchived' => true], ['archivedAt' => 'DESC']);
         return $this->render('admin/dashboard.html.twig', [
             'users' => $users,
             'categories' => $categories,
             'archivedPosts' => $archivedPosts,
+            'archivedComments' => $archivedComments,
         ]);
     }
 

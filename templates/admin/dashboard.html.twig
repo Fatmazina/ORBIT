@@ -118,6 +118,43 @@
             </table>
         </div>
     </div>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Archived Comments</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Author</th>
+                        <th>Post</th>
+                        <th>Excerpt</th>
+                        <th>Archived At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in archivedComments %}
+                        <tr>
+                            <td>{{ c.id }}</td>
+                            <td>{{ c.author.username }}</td>
+                            <td>
+                                <a href="{{ path('app_posts_show', { id: c.post.id }) }}">{{ c.post.title }}</a>
+                            </td>
+                            <td>{{ c.content|slice(0, 60) ~ (c.content|length > 60 ? '…' : '') }}</td>
+                            <td>{{ c.archivedAt ? c.archivedAt|date('Y-m-d H:i') : '' }}</td>
+                            <td>
+                                <a href="{{ path('app_comments_unarchive', { postId: c.post.id, commentId: c.id }) }}" class="btn btn-sm btn-success" onclick="return confirm('Unarchive this comment?')">Unarchive</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No archived comments.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="mt-3">
         <a href="{{ path('app_home') }}" class="btn btn-secondary">Back to home</a>
     </div>
