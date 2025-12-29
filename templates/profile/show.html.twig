@@ -35,7 +35,11 @@
                             <img src="{{ profileUser.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
                             <div>
                                 <div class="fw-bold">{{ profileUser.username }}</div>
-                                <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in {{ p.category.name }}</small>
+                                <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in 
+                                    {% for c in p.categories %}
+                                        {% if not loop.first %}, {% endif %}{{ c.name }}
+                                    {% endfor %}
+                                </small>
                             </div>
                         </div>
                         <h5 class="mb-2">{{ p.title }}</h5>
@@ -72,8 +76,12 @@
                         </div>
                         {% if app.user and app.user.id == profileUser.id %}
                             <div class="mt-2">
-                                <a href="{{ path('app_posts_edit', { id: p.id }) }}" class="btn btn-warning me-2">Edit</a>
-                                <a href="{{ path('app_posts_delete', { id: p.id, from: 'profile' }) }}" class="btn btn-danger" onclick="return confirm('Delete this post?')">Delete</a>
+                                <a href="{{ path('app_posts_edit', { id: p.id }) }}" class="text-warning text-decoration-none me-3" aria-label="Edit">
+                                    <i class="bi bi-pencil-fill fs-5"></i>
+                                </a>
+                                <a href="{{ path('app_posts_delete', { id: p.id, from: 'profile' }) }}" class="text-danger text-decoration-none" aria-label="Delete" onclick="return confirm('Delete this post?')">
+                                    <i class="bi bi-trash-fill fs-5"></i>
+                                </a>
                             </div>
                         {% endif %}
                     </div>

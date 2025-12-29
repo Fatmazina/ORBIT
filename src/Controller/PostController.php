@@ -15,9 +15,22 @@ use Symfony\Component\Routing\Attribute\Route;
 class PostController extends AbstractController
 {
     #[Route('/', name: 'app_posts', methods: ['GET'])]
-    public function index(EntityManagerInterface $em): Response
+    public function index(EntityManagerInterface $em, Request $request): Response
     {
-        $posts = $em->getRepository(Post::class)->findBy([], ['createdAt' => 'DESC']);
+        $selected = (array) $request->query->all('categories');
+        if ($selected) {
+            $qb = $em->createQueryBuilder()
+                ->select('p')
+                ->from(Post::class, 'p')
+                ->leftJoin('p.categories', 'c')
+                ->where('c.id IN (:ids)')
+                ->setParameter('ids', array_map('intval', $selected))
+                ->orderBy('p.createdAt', 'DESC')
+                ->groupBy('p.id');
+            $posts = $qb->getQuery()->getResult();
+        } else {
+            $posts = $em->getRepository(Post::class)->findBy([], ['createdAt' => 'DESC']);
+        }
         $voteRepo = $em->getRepository(Vote::class);
         $counts = [];
         $userVotes = [];
@@ -32,10 +45,13 @@ class PostController extends AbstractController
                 $userVotes[$p->getId()] = $existing ? $existing->getType() : null;
             }
         }
+        $categories = $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']);
         return $this->render('posts/index.html.twig', [
             'posts' => $posts,
             'counts' => $counts,
             'userVotes' => $userVotes,
+            'categories' => $categories,
+            'selectedCategories' => array_map('intval', $selected),
         ]);
     }
 
@@ -50,16 +66,16 @@ class PostController extends AbstractController
         if ($request->isMethod('POST')) {
             $title = trim((string) $request->request->get('title', ''));
             $content = trim((string) $request->request->get('content', ''));
-            $categoryId = (int) $request->request->get('category_id', 0);
+            $categoryIds = (array) $request->request->all('category_ids');
 
-            if ($title === '' || $content === '' || $categoryId <= 0) {
-                $this->addFlash('error', 'Please fill in all fields.');
+            if ($title === '' || $content === '' || count($categoryIds) === 0) {
+                $this->addFlash('error', 'Please fill in all fields and select categories.');
                 return $this->redirectToRoute('app_posts_create');
             }
 
-            $category = $em->getRepository(Category::class)->find($categoryId);
-            if (!$category) {
-                $this->addFlash('error', 'Invalid category.');
+            $categories = $em->getRepository(Category::class)->findBy(['id' => array_map('intval', $categoryIds)]);
+            if (count($categories) === 0) {
+                $this->addFlash('error', 'Invalid categories.');
                 return $this->redirectToRoute('app_posts_create');
             }
 
@@ -67,7 +83,9 @@ class PostController extends AbstractController
             $post->setTitle($title);
             $post->setContent($content);
             $post->setAuthor($user);
-            $post->setCategory($category);
+            foreach ($categories as $cat) {
+                $post->addCategory($cat);
+            }
             $post->setUpdatedAt(new \DateTimeImmutable());
             $em->persist($post);
             $em->flush();
@@ -173,19 +191,24 @@ class PostController extends AbstractController
         if ($request->isMethod('POST')) {
             $title = trim((string) $request->request->get('title', ''));
             $content = trim((string) $request->request->get('content', ''));
-            $categoryId = (int) $request->request->get('category_id', 0);
-            if ($title === '' || $content === '' || $categoryId <= 0) {
-                $this->addFlash('error', 'Please fill in all fields.');
+            $categoryIds = (array) $request->request->all('category_ids');
+            if ($title === '' || $content === '' || count($categoryIds) === 0) {
+                $this->addFlash('error', 'Please fill in all fields and select categories.');
                 return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
             }
-            $category = $em->getRepository(Category::class)->find($categoryId);
-            if (!$category) {
-                $this->addFlash('error', 'Invalid category.');
+            $categories = $em->getRepository(Category::class)->findBy(['id' => array_map('intval', $categoryIds)]);
+            if (count($categories) === 0) {
+                $this->addFlash('error', 'Invalid categories.');
                 return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
             }
             $post->setTitle($title);
             $post->setContent($content);
-            $post->setCategory($category);
+            foreach ($post->getCategories() as $existingCat) {
+                $post->removeCategory($existingCat);
+            }
+            foreach ($categories as $cat) {
+                $post->addCategory($cat);
+            }
             $post->setUpdatedAt(new \DateTimeImmutable());
             $em->flush();
             $this->addFlash('success', 'Post updated.');

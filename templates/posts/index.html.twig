@@ -8,6 +8,22 @@
             <a href="{{ path('app_posts_create') }}" class="btn btn-primary">Create Post</a>
         {% endif %}
     </div>
+    <form method="get" action="{{ path('app_posts') }}" class="mb-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-center">
+                    <strong class="me-3">Filter by categories:</strong>
+                    {% for c in categories %}
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" name="categories[]" value="{{ c.id }}" id="cat_{{ c.id }}" {% if c.id in selectedCategories %}checked{% endif %}>
+                            <label class="form-check-label" for="cat_{{ c.id }}">{{ c.name }}</label>
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm ms-auto">Apply</button>
+                </div>
+            </div>
+        </div>
+    </form>
     {% for p in posts %}
         <div class="card mb-3">
             <div class="card-body">
@@ -19,7 +35,11 @@
                         <div class="fw-bold">
                             <a href="{{ path('app_profile', { id: p.author.id }) }}" class="text-decoration-none text-dark">{{ p.author.username }}</a>
                         </div>
-                        <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in {{ p.category.name }}</small>
+                        <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in 
+                            {% for c in p.categories %}
+                                {% if not loop.first %}, {% endif %}{{ c.name }}
+                            {% endfor %}
+                        </small>
                     </div>
                 </div>
                 <h5 class="mb-2">{{ p.title }}</h5>

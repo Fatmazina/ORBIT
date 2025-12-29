@@ -26,9 +26,9 @@ class Post
     #[ORM\JoinColumn(nullable: false)]
     private ?User $author = null;
 
-    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'posts')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Category $category = null;
+    #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'posts')]
+    #[ORM\JoinTable(name: 'post_category')]
+    private Collection $categories;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $createdAt = null;
@@ -53,6 +53,7 @@ class Post
         $this->comments = new ArrayCollection();
         $this->votes = new ArrayCollection();
         $this->reports = new ArrayCollection();
+        $this->categories = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -67,8 +68,20 @@ class Post
     public function getAuthor(): ?User { return $this->author; }
     public function setAuthor(?User $author): static { $this->author = $author; return $this; }
     
-    public function getCategory(): ?Category { return $this->category; }
-    public function setCategory(?Category $category): static { $this->category = $category; return $this; }
+    /**
+     * @return Collection<int, Category>
+     */
+    public function getCategories(): Collection { return $this->categories; }
+    public function addCategory(Category $category): static {
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+        }
+        return $this;
+    }
+    public function removeCategory(Category $category): static {
+        $this->categories->removeElement($category);
+        return $this;
+    }
     
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function getUpdatedAt(): ?\DateTimeImmutable { return $this->updatedAt; }

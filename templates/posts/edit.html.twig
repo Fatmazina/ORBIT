@@ -13,13 +13,15 @@
             <textarea id="content" name="content" rows="6" class="form-control" required>{{ post.content }}</textarea>
         </div>
         <div class="mb-3">
-            <label for="category_id" class="form-label">Category</label>
-            <select id="category_id" name="category_id" class="form-select" required>
-                <option value="">Select a category</option>
+            <label class="form-label">Categories</label>
+            <div class="d-flex flex-wrap">
                 {% for c in categories %}
-                    <option value="{{ c.id }}" {% if post.category and post.category.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    <div class="form-check me-3 mb-2">
+                        <input class="form-check-input" type="checkbox" id="edit_cat_{{ c.id }}" name="category_ids[]" value="{{ c.id }}" {% if c in post.categories %}checked{% endif %}>
+                        <label class="form-check-label" for="edit_cat_{{ c.id }}">{{ c.name }}</label>
+                    </div>
                 {% endfor %}
-            </select>
+            </div>
         </div>
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{{ path('app_posts_show', { id: post.id }) }}" class="btn btn-secondary ms-2">Cancel</a>
