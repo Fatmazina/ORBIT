@@ -148,6 +148,10 @@ class PostController extends AbstractController
         if ($from === 'list' || str_contains((string) $request->headers->get('referer', ''), '/posts')) {
             return $this->redirectToRoute('app_posts');
         }
+        if ($from === 'profile' || str_contains((string) $request->headers->get('referer', ''), '/profile')) {
+            $profileId = (int) $request->query->get('profileId', $post->getAuthor()->getId());
+            return $this->redirectToRoute('app_profile', ['id' => $profileId]);
+        }
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
 }

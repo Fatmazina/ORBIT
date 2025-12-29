@@ -12,9 +12,13 @@
         <div class="card mb-3">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
-                    <img src="{{ p.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                    <a href="{{ path('app_profile', { id: p.author.id }) }}">
+                        <img src="{{ p.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                    </a>
                     <div>
-                        <div class="fw-bold">{{ p.author.username }}</div>
+                        <div class="fw-bold">
+                            <a href="{{ path('app_profile', { id: p.author.id }) }}" class="text-decoration-none text-dark">{{ p.author.username }}</a>
+                        </div>
                         <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in {{ p.category.name }}</small>
                     </div>
                 </div>

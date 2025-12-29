@@ -2,6 +2,8 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\Post;
+use App\Entity\Vote;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,8 +21,26 @@ class ProfileController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
+        $posts = $em->getRepository(Post::class)->findBy(['author' => $user], ['createdAt' => 'DESC']);
+        $voteRepo = $em->getRepository(Vote::class);
+        $counts = [];
+        $userVotes = [];
+        $currentUser = $this->getUser();
+        foreach ($posts as $p) {
+            $counts[$p->getId()] = [
+                'like' => $voteRepo->count(['post' => $p, 'type' => 'like']),
+                'dislike' => $voteRepo->count(['post' => $p, 'type' => 'dislike']),
+            ];
+            if ($currentUser instanceof User) {
+                $existing = $voteRepo->findOneBy(['post' => $p, 'author' => $currentUser]);
+                $userVotes[$p->getId()] = $existing ? $existing->getType() : null;
+            }
+        }
         return $this->render('profile/show.html.twig', [
             'profileUser' => $user,
+            'posts' => $posts,
+            'counts' => $counts,
+            'userVotes' => $userVotes,
         ]);
     }
 
