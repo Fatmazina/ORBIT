@@ -77,6 +77,10 @@
                         {% endif %}
                         <span class="ms-1">({{ counts[p.id].dislike ?? 0 }})</span>
                     </a>
+                    <a href="{{ path('app_posts_show', { id: p.id }) }}#comments" class="me-3 d-flex align-items-center text-decoration-none">
+                        <i class="bi bi-chat-left-text"></i>
+                        <span class="ms-1">({{ commentTotals[p.id] ?? 0 }})</span>
+                    </a>
                     <a href="{{ path('app_posts_show', { id: p.id }) }}" class="btn btn-link">Open</a>
                     <span class="ms-auto text-muted">{{ p.views }} views</span>
                 </div>
