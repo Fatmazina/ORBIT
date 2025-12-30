@@ -412,10 +412,13 @@ class PostController extends AbstractController
         }
         $isCommentAuthor = $comment->getAuthor()?->getId() === $user->getId();
         $isPostAuthor = $post->getAuthor()?->getId() === $user->getId();
-        if (!$isCommentAuthor && !$isPostAuthor && !$this->isGranted('ROLE_ADMIN')) {
-            $this->addFlash('error', 'You cannot delete this comment.');
+        
+        // Admins can no longer delete comments permanently unless they are the author of the comment or the post owner
+        if (!$isCommentAuthor && !$isPostAuthor) {
+            $this->addFlash('error', 'You can only archive this comment, not delete it.');
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
         }
+        
         $em->remove($comment);
         $em->flush();
         $this->addFlash('success', 'Comment deleted.');

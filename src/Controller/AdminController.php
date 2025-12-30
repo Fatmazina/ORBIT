@@ -24,7 +24,7 @@ class AdminController extends AbstractController
         $userCount = $em->getRepository(User::class)->count([]);
         $postCount = $em->getRepository(Post::class)->count([]);
         $commentCount = $em->getRepository(Comment::class)->count([]);
-        $reportCount = $em->getRepository(Report::class)->count(['status' => 'pending']);
+        $reportCount = $em->getRepository(Report::class)->count(['status' => 'pending', 'isSeen' => false]);
 
         // Data for charts (Last 7 days registrations)
         $sevenDaysAgo = new \DateTime('-7 days');
@@ -176,5 +176,47 @@ class AdminController extends AbstractController
         $em->flush();
         $this->addFlash('success', 'Category added.');
         return $this->redirectToRoute('app_admin_dashboard');
+    }
+
+    #[Route('/reports/{id}/resolve', name: 'app_admin_resolve_report', methods: ['POST', 'GET'])]
+    public function resolveReport(int $id, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $report = $em->getRepository(Report::class)->find($id);
+        if ($report) {
+            $report->setStatus('resolved');
+            $report->setResolvedAt(new \DateTimeImmutable());
+            $report->setResolvedBy($this->getUser());
+            $em->flush();
+            $this->addFlash('success', 'Report marked as resolved.');
+        }
+        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
+    }
+
+    #[Route('/reports/{id}/dismiss', name: 'app_admin_dismiss_report', methods: ['POST', 'GET'])]
+    public function dismissReport(int $id, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $report = $em->getRepository(Report::class)->find($id);
+        if ($report) {
+            $report->setStatus('dismissed');
+            $report->setResolvedAt(new \DateTimeImmutable());
+            $report->setResolvedBy($this->getUser());
+            $em->flush();
+            $this->addFlash('success', 'Report dismissed.');
+        }
+        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
+    }
+
+    #[Route('/reports/mark-all-seen', name: 'app_admin_reports_mark_seen', methods: ['POST'])]
+    public function markAllSeen(EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $reports = $em->getRepository(Report::class)->findBy(['isSeen' => false, 'status' => 'pending']);
+        foreach ($reports as $report) {
+            $report->setIsSeen(true);
+        }
+        $em->flush();
+        return new Response(null, Response::HTTP_NO_CONTENT);
     }
 }

@@ -353,9 +353,29 @@
                                             <td><span class="text-danger">{{ r.reason }}</span></td>
                                             <td>{{ r.createdAt|date('Y-m-d H:i') }}</td>
                                             <td class="pe-4 text-end">
-                                                {% if r.reportedPost %}
-                                                    <a href="{{ path('app_posts_show', { id: r.reportedPost.id }) }}" class="btn btn-sm btn-primary">Review</a>
-                                                {% endif %}
+                                                <div class="btn-group btn-group-sm">
+                                                    {% if r.reportedPost %}
+                                                        <a href="{{ path('app_posts_show', { id: r.reportedPost.id }) }}" class="btn btn-primary" title="Review Content">
+                                                            <i class="bi bi-eye"></i> Review
+                                                        </a>
+                                                        <a href="{{ path('app_posts_archive', { id: r.reportedPost.id }) }}" class="btn btn-warning" title="Archive Post" onclick="return confirm('Archive this post?')">
+                                                            <i class="bi bi-archive-fill"></i>
+                                                        </a>
+                                                    {% elseif r.reportedComment %}
+                                                        <a href="{{ path('app_posts_show', { id: r.reportedComment.post.id }) }}" class="btn btn-primary" title="Review Content">
+                                                            <i class="bi bi-eye"></i> Review
+                                                        </a>
+                                                        <a href="{{ path('app_comments_archive', { postId: r.reportedComment.post.id, commentId: r.reportedComment.id }) }}" class="btn btn-warning" title="Archive Comment" onclick="return confirm('Archive this comment?')">
+                                                            <i class="bi bi-archive-fill"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    <a href="{{ path('app_admin_resolve_report', { id: r.id }) }}" class="btn btn-success" title="Mark as Resolved">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </a>
+                                                    <a href="{{ path('app_admin_dismiss_report', { id: r.id }) }}" class="btn btn-outline-secondary" title="Dismiss Report">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     {% else %}
@@ -459,6 +479,18 @@
             if (targetSection && targetLink) {
                 targetSection.classList.add('active');
                 targetLink.classList.add('active');
+                
+                // If reports section is opened, mark them as seen
+                if (sectionId === 'reports') {
+                    const badge = targetLink.querySelector('.badge');
+                    if (badge) {
+                        badge.remove();
+                        fetch('{{ path("app_admin_reports_mark_seen") }}', {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                    }
+                }
             }
         }
 

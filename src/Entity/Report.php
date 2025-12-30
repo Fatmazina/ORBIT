@@ -31,6 +31,9 @@ class Report
     #[ORM\Column(length: 20)]
     private string $status = 'pending'; // 'pending', 'resolved', 'dismissed'
 
+    #[ORM\Column(type: 'boolean')]
+    private bool $isSeen = false;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -61,6 +64,9 @@ class Report
     
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }
+    
+    public function isSeen(): bool { return $this->isSeen; }
+    public function setIsSeen(bool $isSeen): static { $this->isSeen = $isSeen; return $this; }
     
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function getResolvedAt(): ?\DateTimeImmutable { return $this->resolvedAt; }

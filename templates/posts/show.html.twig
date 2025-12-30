@@ -83,11 +83,24 @@
                             {% endif %}
                             <span class="ms-1">({{ commentCounts[c.id].dislike ?? 0 }})</span>
                         </a>
-                        {% if app.user and (app.user.id == c.author.id or app.user.id == post.author.id or is_granted('ROLE_ADMIN')) %}
-                            <div class="ms-auto">
-                                <a href="{{ path('app_comments_delete', { postId: post.id, commentId: c.id }) }}" class="text-danger text-decoration-none" onclick="return confirm('Delete this comment?')">
-                                    <i class="bi bi-trash-fill"></i>
-                                </a>
+                        {% set isCommentAuthor = app.user and app.user.id == c.author.id %}
+                        {% set isPostAuthor = app.user and app.user.id == post.author.id %}
+                        {% set isAdmin = is_granted('ROLE_ADMIN') %}
+
+                        {% if isCommentAuthor or isPostAuthor or isAdmin %}
+                            <div class="ms-auto d-flex align-items-center">
+                                {% if isAdmin %}
+                                    <a href="{{ path('app_comments_archive', { postId: post.id, commentId: c.id }) }}" class="text-secondary text-decoration-none me-2" title="Archive" onclick="return confirm('Archive this comment?')">
+                                        <i class="bi bi-archive-fill"></i>
+                                    </a>
+                                {% endif %}
+
+                                {# Admins can only delete if they are the author of the comment or the post owner. Otherwise they only archive. #}
+                                {% if isCommentAuthor or isPostAuthor %}
+                                    <a href="{{ path('app_comments_delete', { postId: post.id, commentId: c.id }) }}" class="text-danger text-decoration-none" title="Delete" onclick="return confirm('Delete this comment?')">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </a>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </div>
