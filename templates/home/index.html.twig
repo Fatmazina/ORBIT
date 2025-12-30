@@ -1,14 +1,88 @@
 {% extends "base.html.twig" %}
 
-{% block title %}Home - Orbit Forum{% endblock %}
+{% block title %}Welcome to Orbit Forum{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-12">
-            <h1>Welcome to Orbit Forum, {{ app.user.username }}!</h1>
-            <p>This is the home page. More features coming soon.</p>
+<div class="landing-page bg-dark text-white min-vh-100 d-flex align-items-center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <h1 class="display-3 fw-bold mb-4">🚀 Welcome to <span class="text-primary">Orbit</span></h1>
+                <p class="lead mb-4 opacity-75">Join the conversation in the most dynamic forum in the galaxy. Share ideas, ask questions, and connect with people from around the world.</p>
+                
+                <div class="features mb-5">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon bg-primary rounded-circle p-2 me-3">
+                            <i class="bi bi-chat-dots text-white"></i>
+                        </div>
+                        <span>Engaging community discussions</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon bg-success rounded-circle p-2 me-3">
+                            <i class="bi bi-shield-check text-white"></i>
+                        </div>
+                        <span>Safe and moderated environment</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="feature-icon bg-info rounded-circle p-2 me-3">
+                            <i class="bi bi-lightning-charge text-white"></i>
+                        </div>
+                        <span>Real-time updates and notifications</span>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-3 d-sm-flex">
+                    <a href="{{ path('app_login') }}" class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Get Started
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 text-center">
+                <div class="hero-image p-5">
+                    <i class="bi bi-rocket-takeoff text-primary" style="font-size: 10rem; filter: drop-shadow(0 0 20px rgba(13, 110, 253, 0.5));"></i>
+                </div>
+                <div class="card bg-white bg-opacity-10 border-0 shadow-lg backdrop-blur">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-around">
+                            <div class="text-center">
+                                <h4 class="mb-0 fw-bold">1k+</h4>
+                                <small class="opacity-50 text-uppercase" style="font-size: 0.7rem;">Members</small>
+                            </div>
+                            <div class="text-center">
+                                <h4 class="mb-0 fw-bold">5k+</h4>
+                                <small class="opacity-50 text-uppercase" style="font-size: 0.7rem;">Posts</small>
+                            </div>
+                            <div class="text-center">
+                                <h4 class="mb-0 fw-bold">10k+</h4>
+                                <small class="opacity-50 text-uppercase" style="font-size: 0.7rem;">Comments</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .backdrop-blur {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+    }
+</style>
 {% endblock %}

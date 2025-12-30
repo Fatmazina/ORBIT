@@ -102,8 +102,9 @@
                                     </a>
                                 {% endif %}
 
-                                {# Admins can only delete if they are the author of the comment or the post owner. Otherwise they only archive. #}
-                                {% if isCommentAuthor or isPostAuthor %}
+                                {# Admins can only delete if they are the author of the comment. Otherwise they only archive. #}
+                                {# Regular users can delete if they are the comment author or the post owner. #}
+                                {% if isCommentAuthor or (isPostAuthor and not isAdmin) %}
                                     <a href="{{ path('app_comments_delete', { postId: post.id, commentId: c.id }) }}" class="text-danger text-decoration-none" title="Delete" onclick="return confirm('Delete this comment?')">
                                         <i class="bi bi-trash-fill"></i>
                                     </a>
