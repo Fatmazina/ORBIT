@@ -7,6 +7,7 @@ use App\Entity\Vote;
 use App\Entity\Category;
 use App\Entity\Comment;
 use App\Entity\Report;
+use App\Entity\Notification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -269,6 +270,15 @@ class PostController extends AbstractController
             $vote->setPost($post);
             $vote->setType($type);
             $em->persist($vote);
+
+            // Notification for post vote
+            if ($post->getAuthor() && $post->getAuthor()->getId() !== $user->getId()) {
+                $notification = new Notification();
+                $notification->setUser($post->getAuthor());
+                $notification->setType('vote');
+                $notification->setMessage(sprintf('%s %sd your post "%s"', $user->getUsername(), $type, $post->getTitle()));
+                $em->persist($notification);
+            }
         } else {
             if ($existing->getType() === $type) {
                 $em->remove($existing);
@@ -310,6 +320,16 @@ class PostController extends AbstractController
         $comment->setContent($content);
         $comment->setUpdatedAt(new \DateTimeImmutable());
         $em->persist($comment);
+
+        // Notification for comment
+        if ($post->getAuthor() && $post->getAuthor()->getId() !== $user->getId()) {
+            $notification = new Notification();
+            $notification->setUser($post->getAuthor());
+            $notification->setType('comment');
+            $notification->setMessage(sprintf('%s commented on your post "%s"', $user->getUsername(), $post->getTitle()));
+            $em->persist($notification);
+        }
+
         $em->flush();
         $this->addFlash('success', 'Comment added.');
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
@@ -339,6 +359,15 @@ class PostController extends AbstractController
             $vote->setComment($comment);
             $vote->setType($type);
             $em->persist($vote);
+
+            // Notification for comment vote
+            if ($comment->getAuthor() && $comment->getAuthor()->getId() !== $user->getId()) {
+                $notification = new Notification();
+                $notification->setUser($comment->getAuthor());
+                $notification->setType('vote');
+                $notification->setMessage(sprintf('%s %sd your comment', $user->getUsername(), $type));
+                $em->persist($notification);
+            }
         } else {
             if ($existing->getType() === $type) {
                 $em->remove($existing);
@@ -388,6 +417,16 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
         }
         $comment->setIsArchived(true)->setArchivedAt(new \DateTimeImmutable())->setUpdatedAt(new \DateTimeImmutable());
+        
+        // Notification for comment archive
+        if ($comment->getAuthor()) {
+            $notification = new Notification();
+            $notification->setUser($comment->getAuthor());
+            $notification->setType('archive');
+            $notification->setMessage('Your comment has been archived by an admin. If you continue to violate the rules, you will be banned.');
+            $em->persist($notification);
+        }
+
         $em->flush();
         $this->addFlash('success', 'Comment archived.');
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
@@ -502,6 +541,16 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
         }
         $post->setIsArchived(true)->setArchivedAt(new \DateTimeImmutable())->setUpdatedAt(new \DateTimeImmutable());
+        
+        // Notification for post archive
+        if ($post->getAuthor()) {
+            $notification = new Notification();
+            $notification->setUser($post->getAuthor());
+            $notification->setType('archive');
+            $notification->setMessage(sprintf('Your post "%s" has been archived by an admin. If you continue to violate the rules, you will be banned.', $post->getTitle()));
+            $em->persist($notification);
+        }
+
         $em->flush();
         $this->addFlash('success', 'Post archived.');
         return $this->redirectToRoute('app_admin_dashboard');

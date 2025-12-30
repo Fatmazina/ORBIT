@@ -19,17 +19,111 @@ class AdminController extends AbstractController
     public function dashboard(EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        
+        // Stats for charts
+        $userCount = $em->getRepository(User::class)->count([]);
+        $postCount = $em->getRepository(Post::class)->count([]);
+        $commentCount = $em->getRepository(Comment::class)->count([]);
+        $reportCount = $em->getRepository(Report::class)->count(['status' => 'pending']);
+
+        // Data for charts (Last 7 days registrations)
+        $sevenDaysAgo = new \DateTime('-7 days');
+        $recentUsers = $em->getRepository(User::class)->createQueryBuilder('u')
+            ->where('u.createdAt >= :date')
+            ->setParameter('date', $sevenDaysAgo)
+            ->orderBy('u.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $registrations = [];
+        $regData = [];
+        // Initialize last 7 days with 0
+        for ($i = 6; $i >= 0; $i--) {
+            $date = (new \DateTime())->modify("-$i days")->format('Y-m-d');
+            $regData[$date] = 0;
+        }
+
+        foreach ($recentUsers as $user) {
+            $date = $user->getCreatedAt()->format('Y-m-d');
+            if (isset($regData[$date])) {
+                $regData[$date]++;
+            }
+        }
+
+        foreach ($regData as $date => $count) {
+            $registrations[] = ['date' => $date, 'count' => $count];
+        }
+
+        // Daily Engagement (Posts & Comments last 7 days)
+        $recentPosts = $em->getRepository(Post::class)->createQueryBuilder('p')
+            ->where('p.createdAt >= :date')
+            ->setParameter('date', $sevenDaysAgo)
+            ->getQuery()->getResult();
+        
+        $recentComments = $em->getRepository(Comment::class)->createQueryBuilder('c')
+            ->where('c.createdAt >= :date')
+            ->setParameter('date', $sevenDaysAgo)
+            ->getQuery()->getResult();
+
+        $engagementData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = (new \DateTime())->modify("-$i days")->format('Y-m-d');
+            $engagementData[$date] = ['posts' => 0, 'comments' => 0];
+        }
+
+        foreach ($recentPosts as $p) {
+            $date = $p->getCreatedAt()->format('Y-m-d');
+            if (isset($engagementData[$date])) $engagementData[$date]['posts']++;
+        }
+        foreach ($recentComments as $c) {
+            $date = $c->getCreatedAt()->format('Y-m-d');
+            if (isset($engagementData[$date])) $engagementData[$date]['comments']++;
+        }
+
+        $engagement = [];
+        foreach ($engagementData as $date => $counts) {
+            $engagement[] = ['date' => $date, 'posts' => $counts['posts'], 'comments' => $counts['comments']];
+        }
+
+        // User Verification Status
+        $verifiedCount = $em->getRepository(User::class)->count(['isEmailVerified' => true]);
+        $unverifiedCount = $userCount - $verifiedCount;
+
+        // Data for charts (Posts by category)
+        $postsByCategory = $em->createQuery('
+            SELECT c.name, COUNT(p.id) as count
+            FROM App\Entity\Category c
+            LEFT JOIN c.posts p
+            GROUP BY c.name
+        ')->getResult();
+
         $users = $em->getRepository(User::class)->findBy([], ['createdAt' => 'DESC']);
         $categories = $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']);
         $archivedPosts = $em->getRepository(Post::class)->findBy(['isArchived' => true], ['archivedAt' => 'DESC']);
         $archivedComments = $em->getRepository(Comment::class)->findBy(['isArchived' => true], ['archivedAt' => 'DESC']);
         $reports = $em->getRepository(Report::class)->findBy(['status' => 'pending'], ['createdAt' => 'DESC']);
+
         return $this->render('admin/dashboard.html.twig', [
             'users' => $users,
             'categories' => $categories,
             'archivedPosts' => $archivedPosts,
             'archivedComments' => $archivedComments,
             'reports' => $reports,
+            'stats' => [
+                'users' => $userCount,
+                'posts' => $postCount,
+                'comments' => $commentCount,
+                'pending_reports' => $reportCount,
+            ],
+            'chartData' => [
+                'registrations' => $registrations,
+                'categories' => $postsByCategory,
+                'engagement' => $engagement,
+                'verification' => [
+                    ['status' => 'Verified', 'count' => $verifiedCount],
+                    ['status' => 'Unverified', 'count' => $unverifiedCount],
+                ]
+            ]
         ]);
     }
 

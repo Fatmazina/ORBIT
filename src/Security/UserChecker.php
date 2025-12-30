@@ -3,7 +3,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\User\UserCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -13,10 +13,10 @@ class UserChecker implements UserCheckerInterface
     {
         if ($user instanceof User) {
             if (!$user->isActive()) {
-                throw new CustomUserMessageAuthenticationException('Your account has been blocked. Please contact support.');
+                throw new CustomUserMessageAccountStatusException('Your account has been blocked. Please contact support.');
             }
             if (!$user->isEmailVerified()) {
-                throw new CustomUserMessageAuthenticationException('Please verify your email to login.');
+                throw new CustomUserMessageAccountStatusException('Please verify your email to login.');
             }
         }
     }

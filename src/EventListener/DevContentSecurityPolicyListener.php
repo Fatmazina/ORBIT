@@ -18,35 +18,40 @@ class DevContentSecurityPolicyListener implements EventSubscriberInterface
         }
 
         $response = $event->getResponse();
+        
+        // In dev mode, we want to allow everything needed for the profiler and our charts
+        // If we have an existing CSP, we append our requirements, otherwise we set a permissive one
         $csp = $response->headers->get('Content-Security-Policy');
 
         if (!$csp) {
-            // If no CSP is set, add a minimal one allowing unsafe-eval for testing and bootstrap CDN
-            $csp = "script-src 'self' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net";
+            $csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' cdn.jsdelivr.net";
         } else {
-            if (!str_contains($csp, "cdn.jsdelivr.net")) {
-                $csp = preg_replace_callback("/((?:script|style)-src[^;]*)/i", function ($m) {
-                    return $m[1] . " cdn.jsdelivr.net";
-                }, $csp);
-            }
-            if (!str_contains($csp, "'unsafe-eval'")) {
-                // Try to append unsafe-eval to script-src directive if present
-                $csp = preg_replace_callback("/(script-src[^;]*)/i", function ($m) {
-                    if (str_contains($m[1], "'unsafe-eval'")) {
-                        return $m[1];
-                    }
-                    return $m[1] . " 'unsafe-eval'";
-                }, $csp, -1, $count);
-
-                // If no script-src directive was found, append one
-                if (empty($count)) {
-                    $csp .= "; script-src 'self' 'unsafe-eval'";
+            // Add unsafe-inline and cdn.jsdelivr.net to script-src if it exists
+            if (str_contains($csp, 'script-src')) {
+                if (!str_contains($csp, "'unsafe-inline'")) {
+                    $csp = str_ireplace('script-src', "script-src 'unsafe-inline'", $csp);
                 }
+                if (!str_contains($csp, 'cdn.jsdelivr.net')) {
+                    $csp = str_ireplace('script-src', "script-src cdn.jsdelivr.net", $csp);
+                }
+            } else {
+                $csp .= "; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net";
+            }
+
+            // Add unsafe-inline and cdn.jsdelivr.net to style-src if it exists
+            if (str_contains($csp, 'style-src')) {
+                if (!str_contains($csp, "'unsafe-inline'")) {
+                    $csp = str_ireplace('style-src', "style-src 'unsafe-inline'", $csp);
+                }
+                if (!str_contains($csp, 'cdn.jsdelivr.net')) {
+                    $csp = str_ireplace('style-src', "style-src cdn.jsdelivr.net", $csp);
+                }
+            } else {
+                $csp .= "; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net";
             }
         }
 
         $response->headers->set('Content-Security-Policy', $csp);
-        $this->logger->info('Dev CSP updated to allow unsafe-eval for testing.');
     }
 
     public static function getSubscribedEvents(): array
