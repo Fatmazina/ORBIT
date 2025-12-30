@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Entity\Notification;
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,6 +20,10 @@ class NotificationController extends AbstractController
     public function readAll(EntityManagerInterface $em): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+        
         $notifications = $user->getNotifications();
 
         foreach ($notifications as $notification) {
@@ -41,6 +46,25 @@ class NotificationController extends AbstractController
 
         $notification->setIsRead(true);
         $em->flush();
+
+        $type = $notification->getType();
+        $relatedId = $notification->getRelatedId();
+
+        if ($type === 'archive') {
+            return $this->render('notifications/archived.html.twig', [
+                'message' => $notification->getMessage()
+            ]);
+        }
+
+        if ($relatedId) {
+            if ($type === 'report' && $this->isGranted('ROLE_ADMIN')) {
+                // Redirect to admin dashboard with reports tab active (via hash)
+                return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
+            }
+            
+            // For votes and comments, redirect to the post
+            return $this->redirectToRoute('app_posts_show', ['id' => $relatedId]);
+        }
 
         return $this->redirect($this->generateUrl('app_home'));
     }

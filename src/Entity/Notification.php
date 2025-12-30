@@ -27,7 +27,10 @@ class Notification
     private ?User $user = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $type = null; // vote, comment, archive
+    private ?string $type = null; // vote, comment, archive, report
+
+    #[ORM\Column(nullable: true)]
+    private ?int $relatedId = null;
 
     public function __construct()
     {
@@ -85,6 +88,17 @@ class Notification
     public function setType(string $type): static
     {
         $this->type = $type;
+        return $this;
+    }
+
+    public function getRelatedId(): ?int
+    {
+        return $this->relatedId;
+    }
+
+    public function setRelatedId(?int $relatedId): static
+    {
+        $this->relatedId = $relatedId;
         return $this;
     }
 }

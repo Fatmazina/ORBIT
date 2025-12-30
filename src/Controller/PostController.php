@@ -100,6 +100,22 @@ class PostController extends AbstractController
         $report->setReportedPost($post);
         $report->setReason($reason);
         $em->persist($report);
+
+        // Notify Admins about the report
+        $admins = $em->getRepository(User::class)->createQueryBuilder('u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_ADMIN%')
+            ->getQuery()->getResult();
+        
+        foreach ($admins as $admin) {
+            $notification = new Notification();
+            $notification->setUser($admin);
+            $notification->setType('report');
+            $notification->setMessage(sprintf('New report on post "%s" by %s', $post->getTitle(), $user->getUsername()));
+            $notification->setRelatedId($post->getId());
+            $em->persist($notification);
+        }
+
         $em->flush();
         $this->addFlash('success', 'Report submitted. Our admins will review it.');
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
@@ -277,6 +293,7 @@ class PostController extends AbstractController
                 $notification->setUser($post->getAuthor());
                 $notification->setType('vote');
                 $notification->setMessage(sprintf('%s %sd your post "%s"', $user->getUsername(), $type, $post->getTitle()));
+                $notification->setRelatedId($post->getId());
                 $em->persist($notification);
             }
         } else {
@@ -327,6 +344,7 @@ class PostController extends AbstractController
             $notification->setUser($post->getAuthor());
             $notification->setType('comment');
             $notification->setMessage(sprintf('%s commented on your post "%s"', $user->getUsername(), $post->getTitle()));
+            $notification->setRelatedId($post->getId());
             $em->persist($notification);
         }
 
@@ -366,6 +384,7 @@ class PostController extends AbstractController
                 $notification->setUser($comment->getAuthor());
                 $notification->setType('vote');
                 $notification->setMessage(sprintf('%s %sd your comment', $user->getUsername(), $type));
+                $notification->setRelatedId($post->getId());
                 $em->persist($notification);
             }
         } else {
@@ -424,6 +443,7 @@ class PostController extends AbstractController
             $notification->setUser($comment->getAuthor());
             $notification->setType('archive');
             $notification->setMessage('Your comment has been archived by an admin. If you continue to violate the rules, you will be banned.');
+            $notification->setRelatedId(null); // Archived items go to empty page
             $em->persist($notification);
         }
 
@@ -548,6 +568,7 @@ class PostController extends AbstractController
             $notification->setUser($post->getAuthor());
             $notification->setType('archive');
             $notification->setMessage(sprintf('Your post "%s" has been archived by an admin. If you continue to violate the rules, you will be banned.', $post->getTitle()));
+            $notification->setRelatedId(null); // Archived items go to empty page
             $em->persist($notification);
         }
 
