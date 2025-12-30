@@ -79,19 +79,43 @@ class ProfileController extends AbstractController
 
             $file = $request->files->get('profile_image');
             if ($file) {
+                if (!$file->isValid()) {
+                    $this->addFlash('error', 'Image upload failed: ' . $file->getErrorMessage());
+                    return $this->render('profile/edit.html.twig', [
+                        'user' => $user,
+                    ]);
+                }
+
+                $maxSize = 2 * 1024 * 1024; // 2MB
+                if ($file->getSize() > $maxSize) {
+                    $this->addFlash('error', 'The image is too large. Maximum size allowed is 2MB.');
+                    return $this->render('profile/edit.html.twig', [
+                        'user' => $user,
+                    ]);
+                }
+
+                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!in_array($file->getMimeType(), $allowedMimeTypes)) {
+                    $this->addFlash('error', 'Invalid file type. Only JPG, PNG, GIF and WEBP are allowed.');
+                    return $this->render('profile/edit.html.twig', [
+                        'user' => $user,
+                    ]);
+                }
+
                 $uploadsDir = $this->getParameter('kernel.project_dir') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile';
                 if (!is_dir($uploadsDir)) {
                     @mkdir($uploadsDir, 0775, true);
                 }
                 $safeName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $ext = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
-                if (!$ext) {
-                    try {
-                        $ext = $file->guessExtension() ?: 'bin';
-                    } catch (\Throwable $e) {
-                        $ext = 'bin';
-                    }
+                
+                // Fallback for when php_fileinfo extension is not enabled
+                try {
+                    $ext = $file->guessExtension();
+                } catch (\Exception $e) {
+                    $ext = $file->getClientOriginalExtension();
                 }
+                
+                $ext = $ext ?: 'bin';
                 $newFilename = $safeName . '-' . bin2hex(random_bytes(5)) . '.' . $ext;
                 $file->move($uploadsDir, $newFilename);
                 $user->setProfileImage('/uploads/profile/' . $newFilename);

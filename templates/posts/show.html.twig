@@ -24,7 +24,10 @@
     </div>
     <div class="card mb-3">
         <div class="card-body">
-            <p class="mb-0">{{ post.content }}</p>
+            <p class="mb-3">{{ post.content }}</p>
+            {% if post.image %}
+                <img src="{{ post.image }}" class="img-fluid post-image-full w-100 rounded" alt="{{ post.title }}">
+            {% endif %}
         </div>
     </div>
     <div class="mb-4" id="comments">

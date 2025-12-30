@@ -38,6 +38,17 @@
             .vote-icon.dislike.active {
                 color: #dc3545;
             }
+            .post-image-full {
+                max-height: 500px;
+                object-fit: contain;
+                background-color: #f0f0f0;
+            }
+            .post-image-thumbnail {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 8px;
+            }
         </style>
         {% block stylesheets %}{% endblock %}
     </head>
@@ -65,11 +76,6 @@
                             {% if is_granted('ROLE_ADMIN') %}
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ path('app_admin_dashboard') }}">Admin</a>
-                                </li>
-                            {% endif %}
-                            {% if is_granted('ROLE_MODERATOR') %}
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ path('app_moderator_reports') }}">Reports</a>
                                 </li>
                             {% endif %}
                         {% endif %}

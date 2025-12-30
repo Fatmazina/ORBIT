@@ -119,13 +119,18 @@ class PostController extends AbstractController
 
             if ($title === '' || $content === '' || count($categoryIds) === 0) {
                 $this->addFlash('error', 'Please fill in all fields and select categories.');
-                return $this->redirectToRoute('app_posts_create');
+                // Re-render instead of redirecting to keep input values
+                return $this->render('posts/create.html.twig', [
+                    'categories' => $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']),
+                ]);
             }
 
             $categories = $em->getRepository(Category::class)->findBy(['id' => array_map('intval', $categoryIds)]);
             if (count($categories) === 0) {
                 $this->addFlash('error', 'Invalid categories.');
-                return $this->redirectToRoute('app_posts_create');
+                return $this->render('posts/create.html.twig', [
+                    'categories' => $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']),
+                ]);
             }
 
             $post = new Post();
@@ -135,6 +140,51 @@ class PostController extends AbstractController
             foreach ($categories as $cat) {
                 $post->addCategory($cat);
             }
+
+            $file = $request->files->get('image');
+            if ($file) {
+                if (!$file->isValid()) {
+                    $this->addFlash('error', 'Image upload failed: ' . $file->getErrorMessage());
+                    return $this->render('posts/create.html.twig', [
+                        'categories' => $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']),
+                    ]);
+                }
+
+                $maxSize = 2 * 1024 * 1024; // 2MB
+                if ($file->getSize() > $maxSize) {
+                    $this->addFlash('error', 'The image is too large. Maximum size allowed is 2MB.');
+                    return $this->render('posts/create.html.twig', [
+                        'categories' => $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']),
+                    ]);
+                }
+
+                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!in_array($file->getMimeType(), $allowedMimeTypes)) {
+                    $this->addFlash('error', 'Invalid file type. Only JPG, PNG, GIF and WEBP are allowed.');
+                    return $this->render('posts/create.html.twig', [
+                        'categories' => $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']),
+                    ]);
+                }
+
+                $uploadsDir = $this->getParameter('kernel.project_dir') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'posts';
+                if (!is_dir($uploadsDir)) {
+                    @mkdir($uploadsDir, 0775, true);
+                }
+                $safeName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                
+                // Fallback for when php_fileinfo extension is not enabled
+                try {
+                    $ext = $file->guessExtension();
+                } catch (\Exception $e) {
+                    $ext = $file->getClientOriginalExtension();
+                }
+                
+                $ext = $ext ?: 'bin';
+                $newFilename = $safeName . '-' . bin2hex(random_bytes(5)) . '.' . $ext;
+                $file->move($uploadsDir, $newFilename);
+                $post->setImage('/uploads/posts/' . $newFilename);
+            }
+
             $post->setUpdatedAt(new \DateTimeImmutable());
             $em->persist($post);
             $em->flush();

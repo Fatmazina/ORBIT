@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin')]
 class AdminController extends AbstractController
 {
-    #[Route('/', name: 'app_admin_dashboard', methods: ['GET'])]
+    #[Route('', name: 'app_admin_dashboard', methods: ['GET'])]
     public function dashboard(EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');

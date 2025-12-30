@@ -49,7 +49,12 @@
                     </div>
                 </div>
                 <h5 class="mb-2">{{ p.title }}</h5>
-                <p class="mb-3">{{ p.content }}</p>
+                <p class="mb-3">{{ p.content|slice(0, 250) }}{{ p.content|length > 250 ? '...' : '' }}</p>
+                {% if p.image %}
+                    <div class="mb-3">
+                        <img src="{{ p.image }}" class="post-image-thumbnail" alt="{{ p.title }}">
+                    </div>
+                {% endif %}
                 <div class="d-flex align-items-center">
                     {% set liked = app.user ? (userVotes[p.id] ?? null) == 'like' : false %}
                     {% set disliked = app.user ? (userVotes[p.id] ?? null) == 'dislike' : false %}

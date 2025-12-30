@@ -3,21 +3,27 @@
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-3">Create Post</h2>
-    <form method="post" action="{{ path('app_posts_create') }}">
+    <form method="post" action="{{ path('app_posts_create') }}" enctype="multipart/form-data">
         <div class="mb-3">
             <label for="title" class="form-label">Title</label>
-            <input type="text" id="title" name="title" class="form-control" required>
+            <input type="text" id="title" name="title" class="form-control" value="{{ app.request.request.get('title') }}" required>
         </div>
         <div class="mb-3">
             <label for="content" class="form-label">Content</label>
-            <textarea id="content" name="content" rows="6" class="form-control" required></textarea>
+            <textarea id="content" name="content" rows="6" class="form-control" required>{{ app.request.request.get('content') }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="image" class="form-label">Post Image (optional)</label>
+            <div id="image-error" class="alert alert-danger py-2 mb-2" style="display: none;"></div>
+            <input type="file" id="image" name="image" class="form-control" accept="image/*">
+            <div class="form-text">Maximum size: 2MB (JPG, PNG, GIF, WEBP)</div>
         </div>
         <div class="mb-3">
             <label class="form-label">Categories</label>
             <div class="d-flex flex-wrap">
                 {% for c in categories %}
                     <div class="form-check me-3 mb-2">
-                        <input class="form-check-input" type="checkbox" id="create_cat_{{ c.id }}" name="category_ids[]" value="{{ c.id }}">
+                        <input class="form-check-input" type="checkbox" id="create_cat_{{ c.id }}" name="category_ids[]" value="{{ c.id }}" {% if c.id in app.request.request.all('category_ids') %}checked{% endif %}>
                         <label class="form-check-label" for="create_cat_{{ c.id }}">{{ c.name }}</label>
                     </div>
                 {% endfor %}
@@ -26,4 +32,61 @@
         <button type="submit" class="btn btn-primary">Publish</button>
         <a href="{{ path('app_posts') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const imageInput = document.getElementById('image');
+    const imageError = document.getElementById('image-error');
+    const publishBtn = document.querySelector('button[type="submit"]');
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    function validateFile() {
+        if (imageInput.files && imageInput.files[0]) {
+            const file = imageInput.files[0];
+            if (file.size > maxSize) {
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                imageError.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-octagon-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>File too large!</strong><br>
+                            Your file is ${sizeMB}MB. The maximum allowed is 2MB.<br>
+                            Please choose a smaller image to continue.
+                        </div>
+                    </div>
+                `;
+                imageError.style.display = 'block';
+                imageInput.classList.add('is-invalid');
+                imageInput.value = ''; // Clear the file immediately
+                publishBtn.disabled = true;
+                return false;
+            } else {
+                imageError.style.display = 'none';
+                imageInput.classList.remove('is-invalid');
+                imageInput.classList.add('is-valid');
+                publishBtn.disabled = false;
+                return true;
+            }
+        }
+        imageError.style.display = 'none';
+        imageInput.classList.remove('is-invalid', 'is-valid');
+        publishBtn.disabled = false;
+        return true;
+    }
+
+    imageInput.addEventListener('change', validateFile);
+
+    form.addEventListener('submit', function(e) {
+        // Final check before submission
+        if (!validateFile()) {
+            e.preventDefault();
+            alert('Please select a smaller image (max 2MB) before publishing.');
+        }
+    });
+});
+</script>
 {% endblock %}

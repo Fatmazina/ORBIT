@@ -23,7 +23,9 @@
                             <div class="mb-2">
                                 <img src="{{ user.profileImage ?: asset('images/default-avatar.svg') }}" alt="Profile Image" class="img-thumbnail rounded-circle" style="max-height: 120px; width: 120px; height: 120px; object-fit: cover;">
                             </div>
-                            <input type="file" name="profile_image" id="profile_image" class="form-control">
+                            <div id="image-error" class="alert alert-danger py-2 mb-2" style="display: none;"></div>
+                            <input type="file" name="profile_image" id="profile_image" class="form-control" accept="image/*">
+                            <div class="form-text">Maximum size: 2MB (JPG, PNG, GIF, WEBP)</div>
                         </div>
                         <hr class="my-4">
                         <h5 class="mb-3">Change Password</h5>
@@ -44,4 +46,61 @@
     <div class="text-center mt-3">
         <a href="{{ path('app_profile', { id: user.id }) }}">Back to profile</a>
     </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const imageInput = document.getElementById('profile_image');
+    const imageError = document.getElementById('image-error');
+    const saveBtn = document.querySelector('button[type="submit"]');
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    function validateFile() {
+        if (imageInput.files && imageInput.files[0]) {
+            const file = imageInput.files[0];
+            if (file.size > maxSize) {
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                imageError.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-octagon-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>File too large!</strong><br>
+                            Your file is ${sizeMB}MB. The maximum allowed is 2MB.<br>
+                            Please choose a smaller image to continue.
+                        </div>
+                    </div>
+                `;
+                imageError.style.display = 'block';
+                imageInput.classList.add('is-invalid');
+                imageInput.value = ''; // Clear the file immediately
+                saveBtn.disabled = true;
+                return false;
+            } else {
+                imageError.style.display = 'none';
+                imageInput.classList.remove('is-invalid');
+                imageInput.classList.add('is-valid');
+                saveBtn.disabled = false;
+                return true;
+            }
+        }
+        imageError.style.display = 'none';
+        imageInput.classList.remove('is-invalid', 'is-valid');
+        saveBtn.disabled = false;
+        return true;
+    }
+
+    imageInput.addEventListener('change', validateFile);
+
+    form.addEventListener('submit', function(e) {
+        // Final check before submission
+        if (!validateFile()) {
+            e.preventDefault();
+            alert('Please select a smaller image (max 2MB) before saving changes.');
+        }
+    });
+});
+</script>
 {% endblock %}
