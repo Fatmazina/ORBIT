@@ -358,15 +358,9 @@
                                                         <a href="{{ path('app_posts_show', { id: r.reportedPost.id }) }}" class="btn btn-primary" title="Review Content">
                                                             <i class="bi bi-eye"></i> Review
                                                         </a>
-                                                        <a href="{{ path('app_posts_archive', { id: r.reportedPost.id }) }}" class="btn btn-warning" title="Archive Post" onclick="return confirm('Archive this post?')">
-                                                            <i class="bi bi-archive-fill"></i>
-                                                        </a>
                                                     {% elseif r.reportedComment %}
                                                         <a href="{{ path('app_posts_show', { id: r.reportedComment.post.id }) }}" class="btn btn-primary" title="Review Content">
                                                             <i class="bi bi-eye"></i> Review
-                                                        </a>
-                                                        <a href="{{ path('app_comments_archive', { postId: r.reportedComment.post.id, commentId: r.reportedComment.id }) }}" class="btn btn-warning" title="Archive Comment" onclick="return confirm('Archive this comment?')">
-                                                            <i class="bi bi-archive-fill"></i>
                                                         </a>
                                                     {% endif %}
                                                     <a href="{{ path('app_admin_resolve_report', { id: r.id }) }}" class="btn btn-success" title="Mark as Resolved">

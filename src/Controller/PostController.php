@@ -473,7 +473,60 @@ class PostController extends AbstractController
         $this->addFlash('success', 'Comment unarchived.');
         return $this->redirectToRoute('app_admin_dashboard');
     }
-    
+
+    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/report', name: 'app_comments_report', methods: ['POST'])]
+    public function reportComment(int $postId, int $commentId, Request $request, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $post = $em->getRepository(Post::class)->find($postId);
+        $comment = $em->getRepository(Comment::class)->find($commentId);
+
+        if (!$post || !$comment || $comment->getPost()?->getId() !== $post->getId()) {
+            return $this->redirectToRoute('app_posts');
+        }
+
+        if ($comment->getAuthor()?->getId() === $user->getId()) {
+            $this->addFlash('error', 'You cannot report your own comment.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+
+        $reason = trim((string) $request->request->get('reason', ''));
+        $allowed = ['Spam', 'Harassment or hate', 'Pornography', 'Violence', 'Misinformation', 'Other'];
+        if ($reason === '' || !in_array($reason, $allowed, true)) {
+            $this->addFlash('error', 'Please select a valid reason.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
+
+        $report = new Report();
+        $report->setReporter($user);
+        $report->setReportedComment($comment);
+        $report->setReason($reason);
+        $em->persist($report);
+
+        // Notify admins
+        $admins = $em->getRepository(User::class)->createQueryBuilder('u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_ADMIN%')
+            ->getQuery()->getResult();
+
+        foreach ($admins as $admin) {
+            $notification = new Notification();
+            $notification->setUser($admin);
+            $notification->setType('report');
+            $notification->setMessage(sprintf('New report on a comment by %s', $user->getUsername()));
+            $notification->setRelatedId($post->getId());
+            $em->persist($notification);
+        }
+
+        $em->flush();
+        $this->addFlash('success', 'Thank you for your report. It will be reviewed by an administrator.');
+        return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+    }
+
     #[Route('/{id<\\d+>}/edit', name: 'app_posts_edit', methods: ['GET', 'POST'])]
     public function edit(int $id, Request $request, EntityManagerInterface $em): Response
     {

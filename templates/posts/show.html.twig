@@ -83,6 +83,13 @@
                             {% endif %}
                             <span class="ms-1">({{ commentCounts[c.id].dislike ?? 0 }})</span>
                         </a>
+
+                        {% if app.user and app.user.id != c.author.id %}
+                            <button type="button" class="btn btn-link text-danger p-0 me-3" data-bs-toggle="collapse" data-bs-target="#reportComment{{ c.id }}" aria-expanded="false" aria-controls="reportComment{{ c.id }}">
+                                <i class="bi bi-flag-fill"></i> report
+                            </button>
+                        {% endif %}
+
                         {% set isCommentAuthor = app.user and app.user.id == c.author.id %}
                         {% set isPostAuthor = app.user and app.user.id == post.author.id %}
                         {% set isAdmin = is_granted('ROLE_ADMIN') %}
@@ -104,6 +111,31 @@
                             </div>
                         {% endif %}
                     </div>
+
+                    {% if app.user and app.user.id != c.author.id %}
+                        <div class="collapse mt-2" id="reportComment{{ c.id }}">
+                            <div class="card card-body bg-light border-danger">
+                                <form action="{{ path('app_comments_report', { postId: post.id, commentId: c.id }) }}" method="POST">
+                                    <div class="mb-3">
+                                        <label for="reason{{ c.id }}" class="form-label small fw-bold">Reason for reporting this comment:</label>
+                                        <select name="reason" id="reason{{ c.id }}" class="form-select form-select-sm" required>
+                                            <option value="" disabled selected>Select a reason</option>
+                                            <option value="Spam">Spam</option>
+                                            <option value="Harassment or hate">Harassment or hate</option>
+                                            <option value="Pornography">Pornography</option>
+                                            <option value="Violence">Violence</option>
+                                            <option value="Misinformation">Misinformation</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#reportComment{{ c.id }}">Cancel</button>
+                                        <button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         {% else %}
