@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            {% if not app.user %}
+                window.location.href = "{{ path('app_login') }}";
+                return;
+            {% endif %}
+            
             const url = this.getAttribute('action');
             const formData = new FormData(this);
             const card = this.closest('.card-body');

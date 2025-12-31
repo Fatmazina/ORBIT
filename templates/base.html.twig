@@ -66,62 +66,23 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_posts') }}">Explore</a>
+                        </li>
                         {% if app.user %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_posts') }}">Posts</a>
+                                <a class="nav-link" href="{{ path('app_following') }}">Following</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_posts_create') }}">Create Post</a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link" href="{{ path('app_notifications') }}">
                                     <i class="bi bi-bell"></i>
                                     {% set unreadCount = app.user.notifications|filter(n => not n.isRead)|length %}
                                     {% if unreadCount > 0 %}
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                                            {{ unreadCount }}
-                                        </span>
+                                        <span class="badge rounded-pill bg-danger">{{ unreadCount }}</span>
                                     {% endif %}
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="notificationsDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
-                                    <li class="dropdown-header d-flex justify-content-between align-items-center">
-                                        <span>Notifications</span>
-                                        {% if unreadCount > 0 %}
-                                            <a href="{{ path('app_notifications_read_all') }}" class="btn btn-sm btn-link p-0 text-primary small">Mark all as read</a>
-                                        {% endif %}
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    {% for n in app.user.notifications|sort((a, b) => b.createdAt <=> a.createdAt)|slice(0, 10) %}
-                                        <li>
-                                            <a href="{{ path('app_notification_read', {id: n.id}) }}" class="dropdown-item py-2 px-3 {{ not n.isRead ? 'bg-light fw-bold' : '' }}" style="white-space: normal;">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="me-2 mt-1">
-                                                        {% if n.type == 'vote' %}
-                                                            <i class="bi bi-hand-thumbs-up text-primary"></i>
-                                                        {% elseif n.type == 'comment' %}
-                                                            <i class="bi bi-chat-text text-success"></i>
-                                                        {% elseif n.type == 'archive' %}
-                                                            <i class="bi bi-exclamation-triangle text-danger"></i>
-                                                        {% endif %}
-                                                    </div>
-                                                    <div>
-                                                        <div class="small text-dark">{{ n.message }}</div>
-                                                        <div class="text-muted" style="font-size: 0.75rem;">{{ n.createdAt|date('M d, H:i') }}</div>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </li>
-                                    {% else %}
-                                        <li class="dropdown-item text-center text-muted py-3">No notifications</li>
-                                    {% endfor %}
-                                </ul>
                             </li>
-                            {% if is_granted('ROLE_ADMIN') %}
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ path('app_admin_dashboard') }}">Admin</a>
-                                </li>
-                            {% endif %}
                         {% endif %}
                     </ul>
                     

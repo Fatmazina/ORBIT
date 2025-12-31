@@ -60,6 +60,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'user', orphanRemoval: true)]
     private Collection $notifications;
 
+    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'followers')]
+    #[ORM\JoinTable(name: 'user_follows')]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
+    #[ORM\InverseJoinColumn(name: 'following_user_id', referencedColumnName: 'id')]
+    private Collection $following;
+
+    #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'following')]
+    private Collection $followers;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
@@ -67,6 +76,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->votes = new ArrayCollection();
         $this->reports = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->following = new ArrayCollection();
+        $this->followers = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -250,5 +261,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->passwordResetRequestedAt = $date;
         return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getFollowing(): Collection
+    {
+        return $this->following;
+    }
+
+    public function follow(self $user): static
+    {
+        if (!$this->following->contains($user)) {
+            $this->following->add($user);
+        }
+        return $this;
+    }
+
+    public function unfollow(self $user): static
+    {
+        $this->following->removeElement($user);
+        return $this;
+    }
+
+    public function isFollowing(self $user): bool
+    {
+        return $this->following->contains($user);
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getFollowers(): Collection
+    {
+        return $this->followers;
     }
 }

@@ -16,6 +16,19 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class NotificationController extends AbstractController
 {
+    #[Route('/', name: 'app_notifications', methods: ['GET'])]
+    public function index(): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $this->render('notifications/index.html.twig', [
+            'notifications' => $user->getNotifications(),
+        ]);
+    }
+
     #[Route('/read-all', name: 'app_notifications_read_all', methods: ['GET'])]
     public function readAll(EntityManagerInterface $em): Response
     {
