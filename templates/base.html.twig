@@ -60,7 +60,7 @@
         <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container">
-                <a class="navbar-brand" href="{{ path('app_login') }}">🚀 Orbit Forum</a>
+                <a class="navbar-brand" href="{{ path('app_home') }}">🚀 Orbit Forum</a>
                 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
@@ -125,8 +125,8 @@
                         {% endif %}
                     </ul>
                     
-                    <div class="d-flex align-items-center">
-                        <form class="d-flex me-3" action="{{ path('app_search') }}" method="GET" style="max-width: 300px;">
+                    <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center mt-3 mt-lg-0">
+                        <form class="d-none d-lg-flex mb-3 mb-lg-0 me-lg-3 w-100" action="{{ path('app_search') }}" method="GET" style="max-width: 300px;">
                             <div class="input-group input-group-sm">
                                 <input class="form-control border-secondary bg-dark text-white" type="search" name="q" placeholder="Search..." aria-label="Search" value="{{ query|default('') }}">
                                 <button class="btn btn-outline-secondary" type="submit">
@@ -135,7 +135,7 @@
                             </div>
                         </form>
 
-                        <ul class="navbar-nav align-items-center">
+                        <ul class="navbar-nav align-items-center flex-row">
                             {% if app.user %}
                                 <li class="nav-item me-3">
                                     <a class="nav-link p-0" href="{{ path('app_profile', {id: app.user.id}) }}" title="My Profile">
@@ -151,11 +151,11 @@
                                     </a>
                                 </li>
                             {% else %}
-                                <li class="nav-item">
+                                <li class="nav-item me-3">
                                     <a class="nav-link" href="{{ path('app_login') }}">Login</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ path('app_register') }}">Register</a>
+                                    <a class="nav-link px-3 btn btn-outline-light btn-sm" href="{{ path('app_register') }}">Register</a>
                                 </li>
                             {% endif %}
                         </ul>
