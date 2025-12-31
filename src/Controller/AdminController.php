@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class AdminController extends AbstractController
 {
     #[Route('', name: 'app_admin_dashboard', methods: ['GET'])]
-    public function dashboard(EntityManagerInterface $em): Response
+    public function dashboard(Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         
@@ -97,7 +97,17 @@ class AdminController extends AbstractController
             GROUP BY c.name
         ')->getResult();
 
-        $users = $em->getRepository(User::class)->findBy([], ['createdAt' => 'DESC']);
+        $usersQuery = $em->getRepository(User::class)->createQueryBuilder('u');
+        
+        $search = $request->query->get('q');
+        if ($search) {
+            $usersQuery->where('u.username LIKE :q OR u.email LIKE :q')
+                ->setParameter('q', '%' . $search . '%');
+        }
+
+        $users = $usersQuery->orderBy('u.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
         $categories = $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']);
         $archivedPosts = $em->getRepository(Post::class)->findBy(['isArchived' => true], ['archivedAt' => 'DESC']);
         $archivedComments = $em->getRepository(Comment::class)->findBy(['isArchived' => true], ['archivedAt' => 'DESC']);
@@ -127,10 +137,15 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/block/{id<\\d+>}', name: 'app_admin_block_user', methods: ['POST', 'GET'])]
-    public function block(int $id, EntityManagerInterface $em): Response
+    #[Route('/block/{id<\\d+>}', name: 'app_admin_block_user', methods: ['POST'])]
+    public function block(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('user_action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
         $user = $em->getRepository(User::class)->find($id);
         if ($user) {
             $user->setIsActive(false);
@@ -140,10 +155,15 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('app_admin_dashboard');
     }
 
-    #[Route('/activate/{id<\\d+>}', name: 'app_admin_activate_user', methods: ['POST', 'GET'])]
-    public function activate(int $id, EntityManagerInterface $em): Response
+    #[Route('/activate/{id<\\d+>}', name: 'app_admin_activate_user', methods: ['POST'])]
+    public function activate(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('user_action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
         $user = $em->getRepository(User::class)->find($id);
         if ($user) {
             $user->setIsActive(true);
@@ -157,6 +177,11 @@ class AdminController extends AbstractController
     public function addCategory(Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('add_category', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
         $name = trim((string) $request->request->get('name', ''));
         $description = (string) $request->request->get('description', '');
         if ($name === '') {
@@ -175,13 +200,83 @@ class AdminController extends AbstractController
         $em->persist($cat);
         $em->flush();
         $this->addFlash('success', 'Category added.');
-        return $this->redirectToRoute('app_admin_dashboard');
+        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#categories');
     }
 
-    #[Route('/reports/{id}/resolve', name: 'app_admin_resolve_report', methods: ['POST', 'GET'])]
-    public function resolveReport(int $id, EntityManagerInterface $em): Response
+    #[Route('/categories/{id<\\d+>}/edit', name: 'app_admin_edit_category', methods: ['POST'])]
+    public function editCategory(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('edit_category', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        $cat = $em->getRepository(Category::class)->find($id);
+        if (!$cat) {
+            $this->addFlash('error', 'Category not found.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        $name = trim((string) $request->request->get('name', ''));
+        $description = (string) $request->request->get('description', '');
+
+        if ($name === '') {
+            $this->addFlash('error', 'Category name is required.');
+            return $this->redirect($this->generateUrl('app_admin_dashboard') . '#categories');
+        }
+
+        $existing = $em->getRepository(Category::class)->findOneBy(['name' => $name]);
+        if ($existing && $existing->getId() !== $cat->getId()) {
+            $this->addFlash('error', 'Category name already exists.');
+            return $this->redirect($this->generateUrl('app_admin_dashboard') . '#categories');
+        }
+
+        $cat->setName($name);
+        $cat->setDescription($description !== '' ? $description : null);
+        $em->flush();
+
+        $this->addFlash('success', 'Category updated.');
+        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#categories');
+    }
+
+    #[Route('/categories/{id<\\d+>}/delete', name: 'app_admin_delete_category', methods: ['POST'])]
+    public function deleteCategory(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('delete_category', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        $cat = $em->getRepository(Category::class)->find($id);
+        if (!$cat) {
+            $this->addFlash('error', 'Category not found.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        // Check if category has posts
+        if (count($cat->getPosts()) > 0) {
+            $this->addFlash('error', 'Cannot delete category that has posts. Remove or reassign posts first.');
+            return $this->redirect($this->generateUrl('app_admin_dashboard') . '#categories');
+        }
+
+        $em->remove($cat);
+        $em->flush();
+
+        $this->addFlash('success', 'Category deleted.');
+        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#categories');
+    }
+
+    #[Route('/reports/{id}/resolve', name: 'app_admin_resolve_report', methods: ['POST'])]
+    public function resolveReport(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('report_action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
         $report = $em->getRepository(Report::class)->find($id);
         if ($report) {
             $report->setStatus('resolved');
@@ -193,10 +288,15 @@ class AdminController extends AbstractController
         return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
     }
 
-    #[Route('/reports/{id}/dismiss', name: 'app_admin_dismiss_report', methods: ['POST', 'GET'])]
-    public function dismissReport(int $id, EntityManagerInterface $em): Response
+    #[Route('/reports/{id}/dismiss', name: 'app_admin_dismiss_report', methods: ['POST'])]
+    public function dismissReport(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('report_action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
         $report = $em->getRepository(Report::class)->find($id);
         if ($report) {
             $report->setStatus('dismissed');

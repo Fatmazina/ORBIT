@@ -4,6 +4,7 @@
 <div class="container mt-4">
     <h2 class="mb-3">Create Post</h2>
     <form method="post" action="{{ path('app_posts_create') }}" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="{{ csrf_token('post_create') }}">
         <div class="mb-3">
             <label for="title" class="form-label">Title</label>
             <input type="text" id="title" name="title" class="form-control" value="{{ app.request.request.get('title') }}" required>

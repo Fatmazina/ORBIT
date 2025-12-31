@@ -10,6 +10,7 @@ use App\Entity\Report;
 use App\Entity\Notification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -76,6 +77,10 @@ class PostController extends AbstractController
         if (!$user instanceof User) {
             return $this->redirectToRoute('app_login');
         }
+        if (!$this->isCsrfTokenValid('report_post', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $id]);
+        }
         $post = $em->getRepository(Post::class)->find($id);
         if (!$post) {
             return $this->redirectToRoute('app_posts');
@@ -130,6 +135,12 @@ class PostController extends AbstractController
         }
 
         if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('post_create', $request->request->get('_token'))) {
+                $this->addFlash('error', 'Invalid CSRF token.');
+                return $this->render('posts/create.html.twig', [
+                    'categories' => $em->getRepository(Category::class)->findBy([], ['id' => 'ASC']),
+                ]);
+            }
             $title = trim((string) $request->request->get('title', ''));
             $content = trim((string) $request->request->get('content', ''));
             $categoryIds = (array) $request->request->all('category_ids');
@@ -261,12 +272,16 @@ class PostController extends AbstractController
         ]);
     }
 
-    #[Route('/{id<\\d+>}/vote/{type}', name: 'app_posts_vote', methods: ['POST', 'GET'])]
+    #[Route('/{id<\\d+>}/vote/{type}', name: 'app_posts_vote', methods: ['POST'])]
     public function vote(int $id, string $type, EntityManagerInterface $em, Request $request): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->redirectToRoute('app_login');
+        }
+        if (!$this->isCsrfTokenValid('vote_post', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $id]);
         }
 
         $post = $em->getRepository(Post::class)->find($id);
@@ -304,6 +319,16 @@ class PostController extends AbstractController
             }
         }
         $em->flush();
+
+        if ($request->isXmlHttpRequest() || str_contains($request->headers->get('Accept', ''), 'application/json')) {
+            return new JsonResponse([
+                'success' => true,
+                'likes' => $voteRepo->count(['post' => $post, 'type' => 'like']),
+                'dislikes' => $voteRepo->count(['post' => $post, 'type' => 'dislike']),
+                'userVote' => ($v = $voteRepo->findOneBy(['post' => $post, 'author' => $user])) ? $v->getType() : null,
+            ]);
+        }
+
         $from = (string) $request->query->get('from', '');
         if ($from === 'list' || str_contains((string) $request->headers->get('referer', ''), '/posts')) {
             return $this->redirectToRoute('app_posts');
@@ -321,6 +346,10 @@ class PostController extends AbstractController
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->redirectToRoute('app_login');
+        }
+        if (!$this->isCsrfTokenValid('add_comment', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $id]);
         }
         $post = $em->getRepository(Post::class)->find($id);
         if (!$post) {
@@ -354,11 +383,15 @@ class PostController extends AbstractController
     }
     
     #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/vote/{type}', name: 'app_comments_vote', methods: ['POST', 'GET'])]
-    public function voteComment(int $postId, int $commentId, string $type, EntityManagerInterface $em): Response
+    public function voteComment(int $postId, int $commentId, string $type, EntityManagerInterface $em, Request $request): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->redirectToRoute('app_login');
+        }
+        if (!$this->isCsrfTokenValid('vote_comment', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $postId]);
         }
         $post = $em->getRepository(Post::class)->find($postId);
         $comment = $em->getRepository(Comment::class)->find($commentId);
@@ -395,15 +428,29 @@ class PostController extends AbstractController
             }
         }
         $em->flush();
+
+        if ($request->isXmlHttpRequest() || str_contains($request->headers->get('Accept', ''), 'application/json')) {
+            return new JsonResponse([
+                'success' => true,
+                'likes' => $voteRepo->count(['comment' => $comment, 'type' => 'like']),
+                'dislikes' => $voteRepo->count(['comment' => $comment, 'type' => 'dislike']),
+                'userVote' => ($v = $voteRepo->findOneBy(['comment' => $comment, 'author' => $user])) ? $v->getType() : null,
+            ]);
+        }
+
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
     
-    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/delete', name: 'app_comments_delete', methods: ['POST', 'GET'])]
+    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/delete', name: 'app_comments_delete', methods: ['POST'])]
     public function deleteComment(int $postId, int $commentId, EntityManagerInterface $em, Request $request): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->redirectToRoute('app_login');
+        }
+        if (!$this->isCsrfTokenValid('delete_comment', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $postId]);
         }
         $post = $em->getRepository(Post::class)->find($postId);
         $comment = $em->getRepository(Comment::class)->find($commentId);
@@ -427,10 +474,14 @@ class PostController extends AbstractController
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
     
-    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/archive', name: 'app_comments_archive', methods: ['POST', 'GET'])]
-    public function archiveComment(int $postId, int $commentId, EntityManagerInterface $em): Response
+    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/archive', name: 'app_comments_archive', methods: ['POST'])]
+    public function archiveComment(int $postId, int $commentId, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('archive_comment', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $postId]);
+        }
         $post = $em->getRepository(Post::class)->find($postId);
         $comment = $em->getRepository(Comment::class)->find($commentId);
         if (!$post || !$comment || $comment->getPost()?->getId() !== $post->getId()) {
@@ -457,10 +508,14 @@ class PostController extends AbstractController
         return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
     }
     
-    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/unarchive', name: 'app_comments_unarchive', methods: ['POST', 'GET'])]
-    public function unarchiveComment(int $postId, int $commentId, EntityManagerInterface $em): Response
+    #[Route('/{postId<\\d+>}/comments/{commentId<\\d+>}/unarchive', name: 'app_comments_unarchive', methods: ['POST'])]
+    public function unarchiveComment(int $postId, int $commentId, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('unarchive_comment', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
         $post = $em->getRepository(Post::class)->find($postId);
         $comment = $em->getRepository(Comment::class)->find($commentId);
         if (!$post || !$comment || $comment->getPost()?->getId() !== $post->getId()) {
@@ -483,7 +538,10 @@ class PostController extends AbstractController
         if (!$user instanceof User) {
             return $this->redirectToRoute('app_login');
         }
-
+        if (!$this->isCsrfTokenValid('report_comment', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $postId]);
+        }
         $post = $em->getRepository(Post::class)->find($postId);
         $comment = $em->getRepository(Comment::class)->find($commentId);
 
@@ -545,6 +603,10 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
         }
         if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('post_edit', $request->request->get('_token'))) {
+                $this->addFlash('error', 'Invalid CSRF token.');
+                return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
+            }
             $title = trim((string) $request->request->get('title', ''));
             $content = trim((string) $request->request->get('content', ''));
             $categoryIds = (array) $request->request->all('category_ids');
@@ -565,6 +627,54 @@ class PostController extends AbstractController
             foreach ($categories as $cat) {
                 $post->addCategory($cat);
             }
+
+            // Image handling for edit
+            $file = $request->files->get('image');
+            if ($file) {
+                if (!$file->isValid()) {
+                    $this->addFlash('error', 'Image upload failed: ' . $file->getErrorMessage());
+                    return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
+                }
+
+                $maxSize = 2 * 1024 * 1024; // 2MB
+                if ($file->getSize() > $maxSize) {
+                    $this->addFlash('error', 'The image is too large. Maximum size allowed is 2MB.');
+                    return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
+                }
+
+                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!in_array($file->getMimeType(), $allowedMimeTypes)) {
+                    $this->addFlash('error', 'Invalid file type. Only JPG, PNG, GIF and WEBP are allowed.');
+                    return $this->redirectToRoute('app_posts_edit', ['id' => $post->getId()]);
+                }
+
+                $uploadsDir = $this->getParameter('kernel.project_dir') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'posts';
+                if (!is_dir($uploadsDir)) {
+                    @mkdir($uploadsDir, 0775, true);
+                }
+                $safeName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                
+                try {
+                    $ext = $file->guessExtension();
+                } catch (\Exception $e) {
+                    $ext = $file->getClientOriginalExtension();
+                }
+                
+                $ext = $ext ?: 'bin';
+                $newFilename = $safeName . '-' . bin2hex(random_bytes(5)) . '.' . $ext;
+                
+                // Optional: remove old image if it exists
+                if ($post->getImage()) {
+                    $oldImagePath = $this->getParameter('kernel.project_dir') . DIRECTORY_SEPARATOR . 'public' . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $post->getImage()), DIRECTORY_SEPARATOR);
+                    if (file_exists($oldImagePath) && is_file($oldImagePath)) {
+                        @unlink($oldImagePath);
+                    }
+                }
+
+                $file->move($uploadsDir, $newFilename);
+                $post->setImage('/uploads/posts/' . $newFilename);
+            }
+
             $post->setUpdatedAt(new \DateTimeImmutable());
             $em->flush();
             $this->addFlash('success', 'Post updated.');
@@ -592,6 +702,10 @@ class PostController extends AbstractController
             $this->addFlash('error', 'You cannot delete this post.');
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
         }
+        if (!$this->isCsrfTokenValid('delete_post', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
+        }
         $authorId = $post->getAuthor()?->getId();
         $em->remove($post);
         $em->flush();
@@ -607,9 +721,13 @@ class PostController extends AbstractController
     }
     
     #[Route('/{id<\\d+>}/archive', name: 'app_posts_archive', methods: ['POST', 'GET'])]
-    public function archive(int $id, EntityManagerInterface $em): Response
+    public function archive(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('archive_post', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_posts_show', ['id' => $id]);
+        }
         $post = $em->getRepository(Post::class)->find($id);
         if (!$post) {
             return $this->redirectToRoute('app_posts');
@@ -636,9 +754,13 @@ class PostController extends AbstractController
     }
     
     #[Route('/{id<\\d+>}/unarchive', name: 'app_posts_unarchive', methods: ['POST', 'GET'])]
-    public function unarchive(int $id, EntityManagerInterface $em): Response
+    public function unarchive(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('unarchive_post', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
         $post = $em->getRepository(Post::class)->find($id);
         if (!$post) {
             return $this->redirectToRoute('app_admin_dashboard');
