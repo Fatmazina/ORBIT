@@ -55,6 +55,10 @@
             color: var(--landing-primary);
         }
 
+        .text-primary {
+            color: var(--landing-primary) !important;
+        }
+
         .hero-subtitle {
             font-size: 1.25rem;
             color: #6c757d;
@@ -83,7 +87,6 @@
         .floating-ui {
             animation: floating 6s ease-in-out infinite;
             border-radius: 20px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
         }
 
         @keyframes floating {
@@ -143,10 +146,16 @@
         }
 
         .preview-content {
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-            padding: 2rem;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-content img {
+            max-width: 60%;
+            height: auto;
+            object-fit: contain;
         }
 
         /* Footer */
@@ -210,26 +219,21 @@
                         <a href="{{ path('app_register') }}" class="btn btn-landing-primary btn-lg">Start Your Journey</a>
                     </div>
                     <div class="mt-5 d-flex align-items-center">
-                        <div class="avatar-group d-flex me-3">
-                            <img src="https://i.pravatar.cc/150?u=1" class="avatar-sm border border-2 border-white" style="margin-right: -10px;">
-                            <img src="https://i.pravatar.cc/150?u=2" class="avatar-sm border border-2 border-white" style="margin-right: -10px;">
-                            <img src="https://i.pravatar.cc/150?u=3" class="avatar-sm border border-2 border-white" style="margin-right: -10px;">
-                            <div class="avatar-sm bg-primary text-white d-flex align-items-center justify-content-center border border-2 border-white rounded-circle" style="font-size: 0.7rem;">+2k</div>
-                        </div>
+                        
                         <span class="text-muted small">Joined by <strong>2,000+</strong> active members this month</span>
                     </div>
                 </div>
                 <div class="col-lg-6 mt-5 mt-lg-0" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="1200">
                     <div class="position-relative">
-                        <img src="{{ asset('images/bg.png') }}" alt="Orbit Hero" class="img-fluid floating-ui">
+                        <img src="{{ asset('images/back.png') }}" alt="Orbit Hero" class="img-fluid floating-ui">
                         <!-- Floating Badges -->
-                        <div class="position-absolute bg-white p-3 rounded-4 shadow-lg" style="top: -20px; right: -20px;" data-aos="fade-left" data-aos-delay="500">
+                        <div class="position-absolute bg-white p-3 rounded-4 shadow-lg floating-ui" style="top: -20px; right: -20px;" data-aos="fade-left" data-aos-delay="500">
                             <div class="d-flex align-items-center">
                                 <div class="bg-success-subtle p-2 rounded-3 me-3">
                                     <i class="bi bi-lightning-charge-fill text-success"></i>
                                 </div>
-                                <div>
-                                    <div class="fw-bold small">Fast Interactions</div>
+                                <div >
+                                    <div class="fw-bold small  ">Fast Interactions</div>
                                     <div class="text-muted" style="font-size: 0.7rem;">Real-time updates</div>
                                 </div>
                             </div>
@@ -247,7 +251,7 @@
     <section id="features" class="py-5 mt-5">
         <div class="container">
             <div class="text-center mb-5" data-aos="fade-up">
-                <h6 class="text-primary fw-bold text-uppercase ls-2">Features</h6>
+                {# <h6 class="text-primary fw-bold text-uppercase ls-2">Features</h6> #}
                 <h2 class="display-5 fw-bold">Built for the next generation</h2>
                 <p class="text-muted mx-auto" style="max-width: 600px;">Experience a forum that's as fast as your thoughts and as beautiful as your ideas.</p>
             </div>
@@ -308,15 +312,7 @@
                 </div>
                 <div class="col-lg-7">
                     <div class="preview-content" data-aos="zoom-in-left">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="avatar-md bg-light me-3"></div>
-                            <div class="w-50 bg-light rounded-2" style="height: 12px;"></div>
-                        </div>
-                        <div class="bg-light rounded-4 w-100 mb-3" style="height: 200px;"></div>
-                        <div class="d-flex gap-2">
-                            <div class="bg-light rounded-pill px-4 py-2" style="width: 80px; height: 30px;"></div>
-                            <div class="bg-light rounded-pill px-4 py-2" style="width: 80px; height: 30px;"></div>
-                        </div>
+                        <img src="{{ asset('images/online.png') }}" alt="Community Interaction" class="img-fluid">
                     </div>
                 </div>
             </div>
