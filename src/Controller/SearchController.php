@@ -21,19 +21,19 @@ class SearchController extends AbstractController
 
         if ($query !== '') {
             $users = $em->getRepository(User::class)->createQueryBuilder('u')
-                ->where('u.username LIKE :query')
+                ->where('u.username LIKE :query OR u.email LIKE :query OR u.bio LIKE :query')
                 ->setParameter('query', '%' . $query . '%')
-                ->setMaxResults(10)
+                ->setMaxResults(20)
                 ->getQuery()
                 ->getResult();
 
             $posts = $em->getRepository(Post::class)->createQueryBuilder('p')
-                ->where('p.title LIKE :query')
+                ->where('p.title LIKE :query OR p.content LIKE :query')
                 ->andWhere('p.isArchived = :archived')
                 ->setParameter('query', '%' . $query . '%')
                 ->setParameter('archived', false)
                 ->orderBy('p.createdAt', 'DESC')
-                ->setMaxResults(20)
+                ->setMaxResults(30)
                 ->getQuery()
                 ->getResult();
         }

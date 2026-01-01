@@ -97,6 +97,22 @@ class AdminController extends AbstractController
             GROUP BY c.name
         ')->getResult();
 
+        // Report Analysis Data
+        $reportsByReason = $em->createQuery('
+            SELECT r.reason, COUNT(r.id) as count
+            FROM App\Entity\Report r
+            GROUP BY r.reason
+        ')->getResult();
+
+        $reportsByStatus = $em->createQuery('
+            SELECT r.status, COUNT(r.id) as count
+            FROM App\Entity\Report r
+            GROUP BY r.status
+        ')->getResult();
+
+        // Recent Reports for the table
+        $recentReports = $em->getRepository(Report::class)->findBy([], ['id' => 'DESC'], 10);
+
         $usersQuery = $em->getRepository(User::class)->createQueryBuilder('u');
         
         $search = $request->query->get('q');
@@ -129,6 +145,8 @@ class AdminController extends AbstractController
                 'registrations' => $registrations,
                 'categories' => $postsByCategory,
                 'engagement' => $engagement,
+                'reportsByReason' => $reportsByReason,
+                'reportsByStatus' => $reportsByStatus,
                 'verification' => [
                     ['status' => 'Verified', 'count' => $verifiedCount],
                     ['status' => 'Unverified', 'count' => $unverifiedCount],
@@ -284,26 +302,6 @@ class AdminController extends AbstractController
             $report->setResolvedBy($this->getUser());
             $em->flush();
             $this->addFlash('success', 'Report marked as resolved.');
-        }
-        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
-    }
-
-    #[Route('/reports/{id}/dismiss', name: 'app_admin_dismiss_report', methods: ['POST'])]
-    public function dismissReport(int $id, Request $request, EntityManagerInterface $em): Response
-    {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
-        if (!$this->isCsrfTokenValid('report_action', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
-            return $this->redirectToRoute('app_admin_dashboard');
-        }
-
-        $report = $em->getRepository(Report::class)->find($id);
-        if ($report) {
-            $report->setStatus('dismissed');
-            $report->setResolvedAt(new \DateTimeImmutable());
-            $report->setResolvedBy($this->getUser());
-            $em->flush();
-            $this->addFlash('success', 'Report dismissed.');
         }
         return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
     }

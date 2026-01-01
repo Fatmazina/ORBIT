@@ -102,33 +102,52 @@ class ProfileController extends AbstractController
                     ]);
                 }
 
-                $uploadsDir = $this->getParameter('kernel.project_dir') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile';
-                if (!is_dir($uploadsDir)) {
-                    @mkdir($uploadsDir, 0775, true);
-                }
-                $safeName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                
-                // Fallback for when php_fileinfo extension is not enabled
+                $newFilename = uniqid('pfp_', true) . '.' . $file->guessExtension();
                 try {
-                    $ext = $file->guessExtension();
+                    $file->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/profiles',
+                        $newFilename
+                    );
+                    $user->setProfileImage('/uploads/profiles/' . $newFilename);
                 } catch (\Exception $e) {
-                    $ext = $file->getClientOriginalExtension();
+                    $this->addFlash('error', 'Failed to move uploaded file.');
                 }
-                
-                $ext = $ext ?: 'bin';
-                $newFilename = $safeName . '-' . bin2hex(random_bytes(5)) . '.' . $ext;
-                $file->move($uploadsDir, $newFilename);
-                $user->setProfileImage('/uploads/profile/' . $newFilename);
             }
 
-            $user->setUpdatedAt(new \DateTimeImmutable());
+            $em->persist($user);
             $em->flush();
-            $this->addFlash('success', 'Profile updated successfully.');
+
+            $this->addFlash('success', 'Profile updated successfully!');
             return $this->redirectToRoute('app_profile', ['id' => $user->getId()]);
         }
 
         return $this->render('profile/edit.html.twig', [
             'user' => $user,
         ]);
+    }
+
+    #[Route('/profile/deactivate', name: 'app_profile_deactivate', methods: ['POST'])]
+    public function deactivate(Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        if (!$this->isCsrfTokenValid('deactivate_account', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_profile_edit');
+        }
+
+        $user->setIsActive(false);
+        $em->flush();
+
+        // Invalidate session
+        $request->getSession()->invalidate();
+        $this->container->get('security.token_storage')->setToken(null);
+
+        $this->addFlash('success', 'Your account has been deactivated. We hope to see you again soon!');
+        return $this->redirectToRoute('app_home');
     }
 }

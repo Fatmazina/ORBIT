@@ -37,8 +37,18 @@
                             <label for="confirm_password" class="form-label">Confirm New Password</label>
                             <input type="password" name="confirm_password" id="confirm_password" class="form-control">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Save Changes</button>
                     </form>
+
+                    <hr class="my-4">
+                    <div class="mt-4 p-3 border border-danger rounded bg-light">
+                        <h5 class="text-danger mb-2">Danger Zone</h5>
+                        <p class="small text-muted mb-3">Once you deactivate your account, you will no longer be able to log in or post. This action is reversible by an administrator.</p>
+                        <form method="post" action="{{ path('app_profile_deactivate') }}" onsubmit="return confirm('Are you sure you want to deactivate your account? You will be logged out immediately.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('deactivate_account') }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Deactivate My Account</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

@@ -30,47 +30,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
-            .then(data => {
-                if (data.success) {
-                    // Update counts in the current container
-                    const likeCount = container.querySelector('.like-count');
-                    if (likeCount) likeCount.textContent = `(${data.likes})`;
-                    
-                    const dislikeCount = container.querySelector('.dislike-count');
-                    if (dislikeCount) dislikeCount.textContent = `(${data.dislikes})`;
-                    
-                    // Update icons active state
-                    const likeIcon = container.querySelector('.vote-icon.like');
-                    const dislikeIcon = container.querySelector('.vote-icon.dislike');
-                    
-                    if (likeIcon) {
-                        if (data.userVote === 'like') {
-                            likeIcon.classList.add('active', 'bi-hand-thumbs-up-fill');
-                            likeIcon.classList.remove('bi-hand-thumbs-up');
-                        } else {
-                            likeIcon.classList.remove('active', 'bi-hand-thumbs-up-fill');
-                            likeIcon.classList.add('bi-hand-thumbs-up');
-                        }
-                    }
-                    if (dislikeIcon) {
-                        if (data.userVote === 'dislike') {
-                            dislikeIcon.classList.add('active', 'bi-hand-thumbs-down-fill');
-                            dislikeIcon.classList.remove('bi-hand-thumbs-down');
-                        } else {
-                            dislikeIcon.classList.remove('active', 'bi-hand-thumbs-down-fill');
-                            dislikeIcon.classList.add('bi-hand-thumbs-down');
-                        }
-                    }
+                    .then(data => {
+                        if (data.success) {
+                            // Update counts in the current container
+                            const likeCount = container.querySelector('.like-count');
+                            if (likeCount) likeCount.textContent = `(${data.likes})`;
+                            
+                            const dislikeCount = container.querySelector('.dislike-count');
+                            if (dislikeCount) dislikeCount.textContent = `(${data.dislikes})`;
+                            
+                            // Update icons active state
+                            const likeIcon = container.querySelector('.vote-icon.like');
+                            const dislikeIcon = container.querySelector('.vote-icon.dislike');
+                            
+                            if (likeIcon) {
+                                if (data.userVote === 'like') {
+                                    likeIcon.classList.add('bi-hand-thumbs-up-fill', 'text-primary');
+                                    likeIcon.classList.remove('bi-hand-thumbs-up');
+                                } else {
+                                    likeIcon.classList.remove('bi-hand-thumbs-up-fill', 'text-primary');
+                                    likeIcon.classList.add('bi-hand-thumbs-up');
+                                }
+                            }
+                            if (dislikeIcon) {
+                                if (data.userVote === 'dislike') {
+                                    dislikeIcon.classList.add('bi-hand-thumbs-down-fill', 'text-danger');
+                                    dislikeIcon.classList.remove('bi-hand-thumbs-down');
+                                } else {
+                                    dislikeIcon.classList.remove('bi-hand-thumbs-down-fill', 'text-danger');
+                                    dislikeIcon.classList.add('bi-hand-thumbs-down');
+                                }
+                            }
 
-                    // If it's a post vote, also update the top badges
-                    if (form.classList.contains('post-vote-form')) {
-                        const postLikeBadge = document.querySelector('.post-like-badge');
-                        const postDislikeBadge = document.querySelector('.post-dislike-badge');
-                        if (postLikeBadge) postLikeBadge.textContent = `${data.likes} likes`;
-                        if (postDislikeBadge) postDislikeBadge.textContent = `${data.dislikes} dislikes`;
-                    }
-                }
-            })
+                            // If it's a post vote, also update the top badges
+                            if (form.classList.contains('post-vote-form')) {
+                                const postLikeBadge = document.querySelector('.post-like-badge');
+                                const postDislikeBadge = document.querySelector('.post-dislike-badge');
+                                if (postLikeBadge) postLikeBadge.textContent = `${data.likes} likes`;
+                                if (postDislikeBadge) postDislikeBadge.textContent = `${data.dislikes} dislikes`;
+                            }
+                        }
+                    })
             .catch(error => console.error('Error:', error));
         });
     });
@@ -79,237 +79,175 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">{{ post.title }}</h2>
-        <div>
-            <span class="badge bg-secondary">{{ post.views }} views</span>
-            <span class="badge bg-success post-like-badge">{{ likes }} likes</span>
-            <span class="badge bg-danger post-dislike-badge">{{ dislikes }} dislikes</span>
-            <span class="badge bg-info"><i class="bi bi-chat-left-text"></i> {{ commentsCount }}</span>
-        </div>
-    </div>
-    <div class="d-flex align-items-center mb-2">
-        <a href="{{ path('app_profile', { id: post.author.id }) }}">
-            <img src="{{ post.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-        </a>
-        <p class="text-muted mb-0">by <a href="{{ path('app_profile', { id: post.author.id }) }}" class="text-decoration-none">{{ post.author.username }}</a> in 
-            {% for c in post.categories %}
-                {% if not loop.first %}, {% endif %}{{ c.name }}
-            {% endfor %}
-            • {{ post.createdAt|date('Y-m-d H:i') }}
-        </p>
-    </div>
-    <div class="card mb-3">
-        <div class="card-body">
-            <p class="mb-3">{{ post.content }}</p>
-            {% if post.image %}
-                <img src="{{ post.image }}" class="img-fluid post-image-full w-100 rounded" alt="{{ post.title }}">
-            {% endif %}
-        </div>
-    </div>
-    <div class="mb-4" id="comments">
-        <h4 class="mb-3">Comments</h4>
-        {% if app.user %}
-            <form method="post" action="{{ path('app_posts_comment', { id: post.id }) }}" class="mb-3">
-                <input type="hidden" name="_token" value="{{ csrf_token('add_comment') }}">
-                <div class="mb-2">
-                    <textarea name="content" class="form-control" rows="3" placeholder="Write a comment..." required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="bi bi-chat-left-text me-1"></i> Comment
-                </button>
-            </form>
-        {% else %}
-            <div class="alert alert-info py-2">
-                <a href="{{ path('app_login') }}" class="fw-bold">Login</a> to join the conversation and leave a comment.
-            </div>
-        {% endif %}
-        {% for c in comments %}
-            <div class="card mb-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ path('app_posts') }}" class="text-decoration-none">Feed</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Post details</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <a href="{{ path('app_profile', { id: c.author.id }) }}">
-                            <img src="{{ c.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                    <div class="d-flex align-items-center mb-4">
+                        <a href="{{ path('app_profile', { id: post.author.id }) }}">
+                            <img src="{{ post.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="avatar-md me-3 border">
                         </a>
                         <div>
                             <div class="fw-bold">
-                                <a href="{{ path('app_profile', { id: c.author.id }) }}" class="text-decoration-none text-dark">{{ c.author.username }}</a>
+                                <a href="{{ path('app_profile', { id: post.author.id }) }}" class="text-decoration-none text-dark">{{ post.author.username }}</a>
+                                <span class="text-muted small fw-normal">posted an update</span>
                             </div>
-                            <small class="text-muted">{{ c.createdAt|date('Y-m-d H:i') }}</small>
+                            <small class="text-muted">{{ post.createdAt|date('M d, Y • H:i') }} • 
+                                {% for c in post.categories %}
+                                    <span class="badge bg-light text-dark border-0">{{ c.name }}</span>
+                                {% endfor %}
+                            </small>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="text-muted small"><i class="bi bi-eye me-1"></i> {{ post.views }}</span>
                         </div>
                     </div>
-                    <p class="mb-2">{{ c.content }}</p>
-                    <div class="d-flex align-items-center">
-                        {% set cuv = app.user ? (commentUserVotes[c.id] ?? null) : null %}
-                        <form action="{{ path('app_comments_vote', { postId: post.id, commentId: c.id, type: 'like' }) }}" method="POST" class="d-inline vote-form comment-vote-form">
-                            <input type="hidden" name="_token" value="{{ csrf_token('vote_comment') }}">
-                            <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent">
-                                <i class="bi bi-hand-thumbs-up{{ cuv == 'like' ? '-fill active' : '' }} vote-icon like"></i>
-                                <span class="ms-1 vote-count like-count">({{ commentCounts[c.id].like ?? 0 }})</span>
-                            </button>
-                        </form>
-                        <form action="{{ path('app_comments_vote', { postId: post.id, commentId: c.id, type: 'dislike' }) }}" method="POST" class="d-inline vote-form comment-vote-form">
-                            <input type="hidden" name="_token" value="{{ csrf_token('vote_comment') }}">
-                            <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent">
-                                <i class="bi bi-hand-thumbs-down{{ cuv == 'dislike' ? '-fill active' : '' }} vote-icon dislike"></i>
-                                <span class="ms-1 vote-count dislike-count">({{ commentCounts[c.id].dislike ?? 0 }})</span>
-                            </button>
-                        </form>
 
-                        {% if app.user and app.user.id != c.author.id %}
-                            <button type="button" class="btn btn-link text-danger p-0 me-3" data-bs-toggle="collapse" data-bs-target="#reportComment{{ c.id }}" aria-expanded="false" aria-controls="reportComment{{ c.id }}">
-                                <i class="bi bi-flag-fill"></i> report
-                            </button>
-                        {% endif %}
-
-                        {% set isCommentAuthor = app.user and app.user.id == c.author.id %}
-                        {% set isPostAuthor = app.user and app.user.id == post.author.id %}
-                        {% set isAdmin = is_granted('ROLE_ADMIN') %}
-
-                        {% if isCommentAuthor or isPostAuthor or isAdmin %}
-                            <div class="ms-auto d-flex align-items-center">
-                                {% if isAdmin %}
-                                    <form action="{{ path('app_comments_archive', { postId: post.id, commentId: c.id }) }}" method="POST" class="d-inline">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('archive_comment') }}">
-                                        <button type="submit" class="btn btn-link text-secondary p-0 me-2 border-0 bg-transparent" title="Archive" onclick="return confirm('Archive this comment?')">
-                                            <i class="bi bi-archive-fill"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-
-                                {# Admins can only delete if they are the author of the comment. Otherwise they only archive. #}
-                                {# Regular users can delete if they are the comment author or the post owner. #}
-                                {% if isCommentAuthor or (isPostAuthor and not isAdmin) %}
-                                    <form action="{{ path('app_comments_delete', { postId: post.id, commentId: c.id }) }}" method="POST" class="d-inline">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_comment') }}">
-                                        <button type="submit" class="btn btn-link text-danger p-0 border-0 bg-transparent" title="Delete" onclick="return confirm('Delete this comment?')">
-                                            <i class="bi bi-trash-fill"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    {% if app.user and app.user.id != c.author.id %}
-                        <div class="collapse mt-2" id="reportComment{{ c.id }}">
-                            <div class="card card-body bg-light border-danger">
-                                <form action="{{ path('app_comments_report', { postId: post.id, commentId: c.id }) }}" method="POST">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('report_comment') }}">
-                                    <div class="mb-3">
-                                        <label for="reason{{ c.id }}" class="form-label small fw-bold">Reason for reporting this comment:</label>
-                                        <select name="reason" id="reason{{ c.id }}" class="form-select form-select-sm" required>
-                                            <option value="" disabled selected>Select a reason</option>
-                                            <option value="Spam">Spam</option>
-                                            <option value="Harassment or hate">Harassment or hate</option>
-                                            <option value="Pornography">Pornography</option>
-                                            <option value="Violence">Violence</option>
-                                            <option value="Misinformation">Misinformation</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div class="text-end">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#reportComment{{ c.id }}">Cancel</button>
-                                        <button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
-                                    </div>
-                                </form>
-                            </div>
+                    <h2 class="fw-bold mb-3">{{ post.title }}</h2>
+                    <p class="fs-5 mb-4" style="line-height: 1.6; color: var(--orbit-secondary);">{{ post.content }}</p>
+                    
+                    {% if post.image %}
+                        <div class="mb-4">
+                            <img src="{{ post.image }}" class="img-fluid rounded w-100 shadow-sm" style="max-height: 600px; object-fit: contain; background: #f8f9fa;" alt="{{ post.title }}">
                         </div>
                     {% endif %}
-                </div>
-            </div>
-        {% else %}
-            <div class="alert alert-info">No comments yet.</div>
-        {% endfor %}
-    </div>
-    <div class="mb-3 d-flex align-items-center">
-        {% set liked = app.user ? (userVote ?? null) == 'like' : false %}
-        {% set disliked = app.user ? (userVote ?? null) == 'dislike' : false %}
-        <form action="{{ path('app_posts_vote', { id: post.id, type: 'like' }) }}" method="POST" class="d-inline vote-form post-vote-form">
-            <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
-            <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent">
-                {% if liked %}
-                    <i class="bi bi-hand-thumbs-up-fill active vote-icon like"></i>
-                {% else %}
-                    <i class="bi bi-hand-thumbs-up vote-icon like"></i>
-                {% endif %}
-                <span class="ms-1 vote-count like-count">({{ likes }})</span>
-            </button>
-        </form>
-        <form action="{{ path('app_posts_vote', { id: post.id, type: 'dislike' }) }}" method="POST" class="d-inline vote-form post-vote-form">
-            <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
-            <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent">
-                {% if disliked %}
-                    <i class="bi bi-hand-thumbs-down-fill active vote-icon dislike"></i>
-                {% else %}
-                    <i class="bi bi-hand-thumbs-down vote-icon dislike"></i>
-                {% endif %}
-                <span class="ms-1 vote-count dislike-count">({{ dislikes }})</span>
-            </button>
-        </form>
-        <a href="#comments" class="me-3 d-flex align-items-center text-decoration-none">
-            <i class="bi bi-chat-left-text"></i>
-            <span class="ms-1">({{ commentsCount }})</span>
-        </a>
-    </div>
 
-    {% if app.user %}
-        {% if app.user.id != post.author.id and not post.isArchived %}
-            <div class="mb-3">
-                <button type="button" class="btn btn-link text-danger d-inline-flex align-items-center p-0" data-bs-toggle="collapse" data-bs-target="#reportBox" aria-expanded="false" aria-controls="reportBox">
-                    <i class="bi bi-flag-fill fs-5 me-1"></i> report
-                </button>
-                <div id="reportBox" class="collapse card p-3 mt-2">
-                    <form method="post" action="{{ path('app_posts_report', { id: post.id }) }}">
-                        <input type="hidden" name="_token" value="{{ csrf_token('report_post') }}">
-                        <label class="form-label">Reason</label>
-                        <select name="reason" class="form-select" required>
-                            <option value="Spam">Spam</option>
-                            <option value="Harassment or hate">Harassment or hate</option>
-                            <option value="Pornography">Pornography</option>
-                            <option value="Violence">Violence</option>
-                            <option value="Misinformation">Misinformation</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <button type="submit" class="btn btn-danger btn-sm mt-2">Submit report</button>
-                    </form>
+                    <hr class="text-muted opacity-10">
+
+                    <div class="d-flex align-items-center">
+                        {% set liked = app.user ? (userVote ?? null) == 'like' : false %}
+                        {% set disliked = app.user ? (userVote ?? null) == 'dislike' : false %}
+                        
+                        <form action="{{ path('app_posts_vote', { id: post.id, type: 'like' }) }}" method="POST" class="d-inline vote-form post-vote-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
+                            <button type="submit" class="btn btn-link me-4 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted">
+                                <i class="bi bi-hand-thumbs-up{{ liked ? '-fill text-primary' : '' }} vote-icon like fs-4 me-1"></i>
+                                <span class="fw-bold like-count">({{ likes }})</span>
+                            </button>
+                        </form>
+
+                        <form action="{{ path('app_posts_vote', { id: post.id, type: 'dislike' }) }}" method="POST" class="d-inline vote-form post-vote-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
+                            <button type="submit" class="btn btn-link me-4 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted">
+                                <i class="bi bi-hand-thumbs-down{{ disliked ? '-fill text-danger' : '' }} vote-icon dislike fs-4 me-1"></i>
+                                <span class="fw-bold dislike-count">({{ dislikes }})</span>
+                            </button>
+                        </form>
+
+                        <div class="text-muted d-flex align-items-center me-4">
+                            <i class="bi bi-chat-left fs-4 me-1"></i>
+                            <span class="fw-bold">{{ commentsCount }}</span>
+                        </div>
+
+                        {% if app.user and app.user.id == post.author.id %}
+                            <div class="ms-auto d-flex gap-2">
+                                <a href="{{ path('app_posts_edit', { id: post.id }) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                    <i class="bi bi-pencil me-1"></i> Edit
+                                </a>
+                                <form action="{{ path('app_posts_delete', { id: post.id }) }}" method="POST" onsubmit="return confirm('Delete this post?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete_post') }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                        <i class="bi bi-trash me-1"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        {% endif %}
-        {% if app.user and app.user.id == post.author.id %}
-            <div class="mb-3 d-flex">
-                <a href="{{ path('app_posts_edit', { id: post.id }) }}" class="btn btn-outline-warning btn-sm me-2" aria-label="Edit">
-                    <i class="bi bi-pencil-fill"></i> Edit
+
+            <div class="card shadow-sm mb-4" id="comments">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-4">Comments ({{ commentsCount }})</h5>
+                    
+                    {% if app.user %}
+                        <div class="d-flex mb-4">
+                            <img src="{{ app.user.profileImage ?: asset('images/default-avatar.svg') }}" class="avatar-md me-3 border" alt="">
+                            <form method="post" action="{{ path('app_posts_comment', { id: post.id }) }}" class="flex-grow-1">
+                                <input type="hidden" name="_token" value="{{ csrf_token('add_comment') }}">
+                                <textarea name="content" class="form-control border-0 bg-light rounded-4 mb-2 p-3" rows="3" placeholder="Write a comment..." required></textarea>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4">Post Comment</button>
+                                </div>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert bg-light border-0 rounded-4 text-center py-4 mb-4">
+                            <p class="text-muted mb-3">Join the conversation to share your thoughts!</p>
+                            <a href="{{ path('app_login') }}" class="btn btn-primary rounded-pill px-4">Login to Comment</a>
+                        </div>
+                    {% endif %}
+
+                    <div class="comment-list">
+                        {% for c in comments %}
+                            <div class="d-flex mb-4">
+                                <a href="{{ path('app_profile', { id: c.author.id }) }}">
+                                    <img src="{{ c.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="avatar-md me-3 border">
+                                </a>
+                                <div class="flex-grow-1 bg-light rounded-4 p-3 position-relative">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <a href="{{ path('app_profile', { id: c.author.id }) }}" class="text-decoration-none text-dark fw-bold">{{ c.author.username }}</a>
+                                            <small class="text-muted ms-2">{{ c.createdAt|date('M d, Y • H:i') }}</small>
+                                        </div>
+                                        
+                                        {% set isCommentAuthor = app.user and app.user.id == c.author.id %}
+                                        {% set isPostAuthor = app.user and app.user.id == post.author.id %}
+                                        {% if isCommentAuthor or isPostAuthor %}
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                    <li>
+                                                        <form action="{{ path('app_comments_delete', { postId: post.id, commentId: c.id }) }}" method="POST" onsubmit="return confirm('Delete this comment?')">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_comment') }}">
+                                                            <button type="submit" class="dropdown-item text-danger">Delete</button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-2 text-secondary">{{ c.content }}</p>
+                                    
+                                    <div class="d-flex align-items-center">
+                                        {% set cuv = app.user ? (commentUserVotes[c.id] ?? null) : null %}
+                                        <form action="{{ path('app_comments_vote', { postId: post.id, commentId: c.id, type: 'like' }) }}" method="POST" class="d-inline vote-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('vote_comment') }}">
+                                            <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted small">
+                                                <i class="bi bi-hand-thumbs-up{{ cuv == 'like' ? '-fill text-primary' : '' }} vote-icon like me-1"></i>
+                                                <span class="like-count">({{ commentCounts[c.id].like ?? 0 }})</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ path('app_comments_vote', { postId: post.id, commentId: c.id, type: 'dislike' }) }}" method="POST" class="d-inline vote-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('vote_comment') }}">
+                                            <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted small">
+                                                <i class="bi bi-hand-thumbs-down{{ cuv == 'dislike' ? '-fill text-danger' : '' }} vote-icon dislike me-1"></i>
+                                                <span class="dislike-count">({{ commentCounts[c.id].dislike ?? 0 }})</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-4">No comments yet. Be the first to join the conversation!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-5">
+                <a href="{{ path('app_posts') }}" class="btn btn-link text-decoration-none text-muted">
+                    <i class="bi bi-arrow-left me-1"></i> Back to feed
                 </a>
-                <form action="{{ path('app_posts_delete', { id: post.id }) }}" method="POST" onsubmit="return confirm('Delete this post?')">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete_post') }}">
-                    <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Delete">
-                        <i class="bi bi-trash-fill"></i> Delete
-                    </button>
-                </form>
             </div>
-        {% elseif is_granted('ROLE_ADMIN') %}
-            <div class="mb-3">
-                {% if post.isArchived %}
-                    <form action="{{ path('app_posts_unarchive', { id: post.id }) }}" method="POST" onsubmit="return confirm('Unarchive this post?')">
-                        <input type="hidden" name="_token" value="{{ csrf_token('unarchive_post') }}">
-                        <button type="submit" class="btn btn-outline-success btn-sm d-inline-flex align-items-center" aria-label="Unarchive">
-                            <i class="bi bi-archive-fill me-1"></i> unarchive
-                        </button>
-                    </form>
-                {% else %}
-                    <form action="{{ path('app_posts_archive', { id: post.id }) }}" method="POST" onsubmit="return confirm('Archive this post?')">
-                        <input type="hidden" name="_token" value="{{ csrf_token('archive_post') }}">
-                        <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center" aria-label="Archive">
-                            <i class="bi bi-archive-fill me-1"></i> archive
-                        </button>
-                    </form>
-                {% endif %}
-            </div>
-        {% endif %}
-    {% endif %}
-    <div>
-        <a href="{{ path('app_posts') }}" class="btn btn-secondary">Back to posts</a>
+        </div>
     </div>
 </div>
 {% endblock %}

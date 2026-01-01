@@ -4,113 +4,158 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-3">Profile</h2>
-    <div class="card">
-        <div class="card-body">
-            {% if profileUser.profileImage %}
-                <div class="mb-3">
-                    <img src="{{ profileUser.profileImage }}" alt="Profile Image" class="img-thumbnail" style="max-height: 150px;">
-                </div>
-            {% endif %}
-            <p class="mb-1"><strong>Username:</strong> {{ profileUser.username }}</p>
-            <p class="mb-1"><strong>Email:</strong> {{ profileUser.email }}</p>
-            {% if profileUser.bio %}
-                <p class="mb-1"><strong>Bio:</strong> {{ profileUser.bio }}</p>
-            {% endif %}
-            <div class="mt-3">
-                <span class="me-3"><strong>Followers:</strong> {{ profileUser.followers|length }}</span>
-                <span><strong>Following:</strong> {{ profileUser.following|length }}</span>
-            </div>
-            <div class="mt-3">
-                {% if app.user %}
-                    {% if app.user.id != profileUser.id %}
-                        {% if app.user.isFollowing(profileUser) %}
-                            <form action="{{ path('app_user_unfollow', { id: profileUser.id }) }}" method="POST">
-                                <button type="submit" class="btn btn-outline-danger">Unfollow</button>
-                            </form>
-                        {% else %}
-                            <form action="{{ path('app_user_follow', { id: profileUser.id }) }}" method="POST">
-                                <button type="submit" class="btn btn-primary">Follow</button>
-                            </form>
-                        {% endif %}
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Profile Header -->
+            <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                <div style="height: 150px; background: linear-gradient(135deg, #26c2bc 0%, #2575fc 100%);"></div>
+                <div class="card-body pt-0 px-4">
+                    <div class="d-flex align-items-end mb-4" style="margin-top: -50px;">
+                        <img src="{{ profileUser.profileImage ?: asset('images/default-avatar.svg') }}" 
+                             alt="{{ profileUser.username }}" 
+                             class="rounded-circle border border-4 border-white shadow-sm bg-white" 
+                             style="width: 120px; height: 120px; object-fit: cover;">
+                        <div class="ms-4 mb-2 flex-grow-1">
+                            <h3 class="fw-bold mb-0 text-dark">{{ profileUser.username }}</h3>
+                            <p class="text-muted small mb-0">{{ profileUser.email }}</p>
+                        </div>
+                        <div class="mb-2">
+                            {% if app.user and app.user.id == profileUser.id %}
+                                <a href="{{ path('app_profile_edit') }}" class="btn btn-primary rounded-pill px-4">Edit Profile</a>
+                            {% else %}
+                                {% if app.user %}
+                                    {% if app.user.isFollowing(profileUser) %}
+                                        <form action="{{ path('app_user_unfollow', { id: profileUser.id }) }}" method="POST">
+                                            <button type="submit" class="btn btn-outline-danger rounded-pill px-4">Unfollow</button>
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ path('app_user_follow', { id: profileUser.id }) }}" method="POST">
+                                            <button type="submit" class="btn btn-primary rounded-pill px-4">Follow</button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ path('app_login') }}" class="btn btn-primary rounded-pill px-4">Follow</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if profileUser.bio %}
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-muted small text-uppercase">About</h6>
+                            <p class="text-secondary mb-0">{{ profileUser.bio }}</p>
+                        </div>
                     {% endif %}
-                {% else %}
-                    <a href="{{ path('app_login') }}" class="btn btn-primary">Follow</a>
-                {% endif %}
+
+                    <div class="d-flex gap-4 border-top pt-3">
+                        <div class="text-center">
+                            <div class="fw-bold text-dark">{{ profileUser.followers|length }}</div>
+                            <div class="text-muted small">Followers</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="fw-bold text-dark">{{ profileUser.following|length }}</div>
+                            <div class="text-muted small">Following</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="fw-bold text-dark">{{ posts|length }}</div>
+                            <div class="text-muted small">Posts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Posts -->
+            <h5 class="fw-bold mb-4 mt-5">Posts by {{ profileUser.username }}</h5>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    {% for p in posts %}
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="{{ profileUser.profileImage ?: asset('images/default-avatar.svg') }}" class="avatar-md me-2 border" alt="">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ profileUser.username }}</div>
+                                        <small class="text-muted">{{ p.createdAt|date('M d, Y') }} • 
+                                            {% for c in p.categories %}
+                                                <span class="badge bg-light text-dark border-0">{{ c.name }}</span>
+                                            {% endfor %}
+                                        </small>
+                                    </div>
+                                    <div class="ms-auto dropdown">
+                                        <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                            <li><a class="dropdown-item" href="{{ path('app_posts_show', {id: p.id}) }}">View Post</a></li>
+                                            {% if app.user and app.user.id == profileUser.id %}
+                                                <li><a class="dropdown-item" href="{{ path('app_posts_edit', {id: p.id}) }}">Edit</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <h5 class="card-title mb-2"><a href="{{ path('app_posts_show', {id: p.id}) }}" class="text-decoration-none text-dark">{{ p.title }}</a></h5>
+                                <p class="text-secondary mb-3">{{ p.content|slice(0, 200) }}{{ p.content|length > 200 ? '...' : '' }}</p>
+                                
+                                <div class="d-flex align-items-center">
+                                    {% set liked = app.user ? (userVotes[p.id] ?? null) == 'like' : false %}
+                                    {% set disliked = app.user ? (userVotes[p.id] ?? null) == 'dislike' : false %}
+                                    
+                                    <form action="{{ path('app_posts_vote', { id: p.id, type: 'like', from: 'profile', profileId: profileUser.id }) }}" method="POST" class="d-inline vote-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
+                                        <button type="submit" class="btn btn-link me-4 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted small">
+                                            <i class="bi bi-hand-thumbs-up{{ liked ? '-fill text-primary' : '' }} vote-icon like fs-5 me-1"></i>
+                                            <span class="like-count">({{ counts[p.id].like ?? 0 }})</span>
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ path('app_posts_vote', { id: p.id, type: 'dislike', from: 'profile', profileId: profileUser.id }) }}" method="POST" class="d-inline vote-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
+                                        <button type="submit" class="btn btn-link me-4 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted small">
+                                            <i class="bi bi-hand-thumbs-down{{ disliked ? '-fill text-danger' : '' }} vote-icon dislike fs-5 me-1"></i>
+                                            <span class="dislike-count">({{ counts[p.id].dislike ?? 0 }})</span>
+                                        </button>
+                                    </form>
+
+                                    <a href="{{ path('app_posts_show', { id: p.id }) }}#comments" class="text-muted text-decoration-none small d-flex align-items-center">
+                                        <i class="bi bi-chat-left fs-5 me-1"></i>
+                                        <span>Comment</span>
+                                    </a>
+
+                                    <div class="ms-auto text-muted small">
+                                        <i class="bi bi-eye me-1"></i> {{ p.views }} views
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card card-body text-center py-5 shadow-sm">
+                            <i class="bi bi-journals fs-1 text-muted mb-3"></i>
+                            <p class="text-muted">No posts by this user yet.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Member info</h6>
+                            <ul class="list-unstyled small mb-0">
+                                <li class="mb-2 d-flex align-items-center text-muted">
+                                    <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                    Joined {{ profileUser.createdAt|date('M Y') }}
+                                </li>
+                                <li class="d-flex align-items-center text-muted">
+                                    <i class="bi bi-geo-alt me-2 text-primary"></i>
+                                    Global Community
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="mt-3">
-        <a href="{{ path('app_home') }}" class="btn btn-secondary">Back to home</a>
-        {% if app.user and app.user.id == profileUser.id %}
-            <a href="{{ path('app_profile_edit') }}" class="btn btn-primary ms-2">Edit Profile</a>
-        {% endif %}
-    </div>
-    <div class="mt-4">
-        <h3 class="mb-3">Posts by {{ profileUser.username }}</h3>
-        {% if posts is defined and posts|length > 0 %}
-            {% for p in posts %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-2">
-                            <img src="{{ profileUser.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                            <div>
-                                <div class="fw-bold">{{ profileUser.username }}</div>
-                                <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in 
-                                    {% for c in p.categories %}
-                                        {% if not loop.first %}, {% endif %}{{ c.name }}
-                                    {% endfor %}
-                                </small>
-                            </div>
-                        </div>
-                        <h5 class="mb-2">{{ p.title }}</h5>
-                        <p class="mb-3">{{ p.content }}</p>
-                        <div class="d-flex align-items-center">
-                            {% set liked = app.user ? (userVotes[p.id] ?? null) == 'like' : false %}
-                            {% set disliked = app.user ? (userVotes[p.id] ?? null) == 'dislike' : false %}
-                            <form action="{{ path('app_posts_vote', { id: p.id, type: 'like', from: 'profile', profileId: profileUser.id }) }}" method="POST" class="vote-form d-inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
-                                <button type="submit" class="btn btn-link p-0 me-3 d-flex align-items-center text-decoration-none">
-                                {% if liked %}
-                                    <i class="bi bi-hand-thumbs-up-fill active vote-icon like"></i>
-                                {% else %}
-                                    <i class="bi bi-hand-thumbs-up vote-icon like"></i>
-                                {% endif %}
-                                    <span class="ms-1 vote-count like-count">({{ counts[p.id].like ?? 0 }})</span>
-                                </button>
-                            </form>
-                            <form action="{{ path('app_posts_vote', { id: p.id, type: 'dislike', from: 'profile', profileId: profileUser.id }) }}" method="POST" class="vote-form d-inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
-                                <button type="submit" class="btn btn-link p-0 me-3 d-flex align-items-center text-decoration-none">
-                                {% if disliked %}
-                                    <i class="bi bi-hand-thumbs-down-fill active vote-icon dislike"></i>
-                                {% else %}
-                                    <i class="bi bi-hand-thumbs-down vote-icon dislike"></i>
-                                {% endif %}
-                                    <span class="ms-1 vote-count dislike-count">({{ counts[p.id].dislike ?? 0 }})</span>
-                                </button>
-                            </form>
-                            <a href="{{ path('app_posts_show', { id: p.id }) }}" class="btn btn-link">Open</a>
-                            <span class="ms-auto text-muted">{{ p.views }} views</span>
-                        </div>
-                        {% if app.user and app.user.id == profileUser.id %}
-                            <div class="mt-2">
-                                <a href="{{ path('app_posts_edit', { id: p.id }) }}" class="text-warning text-decoration-none me-3" aria-label="Edit">
-                                    <i class="bi bi-pencil-fill fs-5"></i>
-                                </a>
-                                <a href="{{ path('app_posts_delete', { id: p.id, from: 'profile' }) }}" class="text-danger text-decoration-none" aria-label="Delete" onclick="return confirm('Delete this post?')">
-                                    <i class="bi bi-trash-fill fs-5"></i>
-                                </a>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-info">No posts yet.</div>
-        {% endif %}
-    </div>
-    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -142,39 +187,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
-            .then(data => {
-                if (data.success) {
-                    // Update counts
-                    const likeCount = container.querySelector('.like-count');
-                    if (likeCount) likeCount.textContent = `(${data.likes})`;
-                    
-                    const dislikeCount = container.querySelector('.dislike-count');
-                    if (dislikeCount) dislikeCount.textContent = `(${data.dislikes})`;
-                    
-                    // Update icons active state
-                    const likeIcon = container.querySelector('.vote-icon.like');
-                    const dislikeIcon = container.querySelector('.vote-icon.dislike');
-                    
-                    if (likeIcon) {
-                        if (data.userVote === 'like') {
-                            likeIcon.classList.add('active', 'bi-hand-thumbs-up-fill');
-                            likeIcon.classList.remove('bi-hand-thumbs-up');
-                        } else {
-                            likeIcon.classList.remove('active', 'bi-hand-thumbs-up-fill');
-                            likeIcon.classList.add('bi-hand-thumbs-up');
+                    .then(data => {
+                        if (data.success) {
+                            // Update counts
+                            const likeCount = container.querySelector('.like-count');
+                            if (likeCount) likeCount.textContent = `(${data.likes})`;
+                            
+                            const dislikeCount = container.querySelector('.dislike-count');
+                            if (dislikeCount) dislikeCount.textContent = `(${data.dislikes})`;
+                            
+                            // Update icons active state
+                            const likeIcon = container.querySelector('.vote-icon.like');
+                            const dislikeIcon = container.querySelector('.vote-icon.dislike');
+                            
+                            if (likeIcon) {
+                                if (data.userVote === 'like') {
+                                    likeIcon.classList.add('bi-hand-thumbs-up-fill', 'text-primary');
+                                    likeIcon.classList.remove('bi-hand-thumbs-up');
+                                } else {
+                                    likeIcon.classList.remove('bi-hand-thumbs-up-fill', 'text-primary');
+                                    likeIcon.classList.add('bi-hand-thumbs-up');
+                                }
+                            }
+                            if (dislikeIcon) {
+                                if (data.userVote === 'dislike') {
+                                    dislikeIcon.classList.add('bi-hand-thumbs-down-fill', 'text-danger');
+                                    dislikeIcon.classList.remove('bi-hand-thumbs-down');
+                                } else {
+                                    dislikeIcon.classList.remove('bi-hand-thumbs-down-fill', 'text-danger');
+                                    dislikeIcon.classList.add('bi-hand-thumbs-down');
+                                }
+                            }
                         }
-                    }
-                    if (dislikeIcon) {
-                        if (data.userVote === 'dislike') {
-                            dislikeIcon.classList.add('active', 'bi-hand-thumbs-down-fill');
-                            dislikeIcon.classList.remove('bi-hand-thumbs-down');
-                        } else {
-                            dislikeIcon.classList.remove('active', 'bi-hand-thumbs-down-fill');
-                            dislikeIcon.classList.add('bi-hand-thumbs-down');
-                        }
-                    }
-                }
-            })
+                    })
             .catch(error => console.error('Error:', error));
         });
     });

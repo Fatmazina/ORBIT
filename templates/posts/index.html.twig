@@ -32,39 +32,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                if (data.success) {
-                    // Update counts
-                    const likeCount = card.querySelector('.like-count');
-                    if (likeCount) likeCount.textContent = `(${data.likes})`;
-                    
-                    const dislikeCount = card.querySelector('.dislike-count');
-                    if (dislikeCount) dislikeCount.textContent = `(${data.dislikes})`;
-                    
-                    // Update icon states
-                    const likeIcon = card.querySelector('.vote-icon.like');
-                    const dislikeIcon = card.querySelector('.vote-icon.dislike');
-                    
-                    if (likeIcon) {
-                        if (data.userVote === 'like') {
-                            likeIcon.classList.add('active', 'bi-hand-thumbs-up-fill');
-                            likeIcon.classList.remove('bi-hand-thumbs-up');
-                        } else {
-                            likeIcon.classList.remove('active', 'bi-hand-thumbs-up-fill');
-                            likeIcon.classList.add('bi-hand-thumbs-up');
+                        if (data.success) {
+                            // Update counts
+                            const likeCount = card.querySelector('.like-count');
+                            if (likeCount) likeCount.textContent = `(${data.likes})`;
+                            
+                            const dislikeCount = card.querySelector('.dislike-count');
+                            if (dislikeCount) dislikeCount.textContent = `(${data.dislikes})`;
+                            
+                            // Update icon states
+                            const likeIcon = card.querySelector('.vote-icon.like');
+                            const dislikeIcon = card.querySelector('.vote-icon.dislike');
+                            
+                            if (likeIcon) {
+                                if (data.userVote === 'like') {
+                                    likeIcon.classList.add('bi-hand-thumbs-up-fill', 'text-primary');
+                                    likeIcon.classList.remove('bi-hand-thumbs-up');
+                                } else {
+                                    likeIcon.classList.remove('bi-hand-thumbs-up-fill', 'text-primary');
+                                    likeIcon.classList.add('bi-hand-thumbs-up');
+                                }
+                            }
+                            
+                            if (dislikeIcon) {
+                                if (data.userVote === 'dislike') {
+                                    dislikeIcon.classList.add('bi-hand-thumbs-down-fill', 'text-danger');
+                                    dislikeIcon.classList.remove('bi-hand-thumbs-down');
+                                } else {
+                                    dislikeIcon.classList.remove('bi-hand-thumbs-down-fill', 'text-danger');
+                                    dislikeIcon.classList.add('bi-hand-thumbs-down');
+                                }
+                            }
                         }
-                    }
-                    
-                    if (dislikeIcon) {
-                        if (data.userVote === 'dislike') {
-                            dislikeIcon.classList.add('active', 'bi-hand-thumbs-down-fill');
-                            dislikeIcon.classList.remove('bi-hand-thumbs-down');
-                        } else {
-                            dislikeIcon.classList.remove('active', 'bi-hand-thumbs-down-fill');
-                            dislikeIcon.classList.add('bi-hand-thumbs-down');
-                        }
-                    }
-                }
-            })
+                    })
             .catch(error => console.error('Error:', error));
         });
     });
@@ -72,100 +72,260 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <!-- Mobile Search Bar -->
-    <div class="d-lg-none mb-3">
-        <form action="{{ path('app_search') }}" method="GET">
-            <div class="input-group">
-                <input class="form-control border-secondary bg-white" type="search" name="q" placeholder="Search posts..." aria-label="Search" value="{{ query|default('') }}">
-                <button class="btn btn-primary" type="submit">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Posts</h2>
-        {% if app.user %}
-            <a href="{{ path('app_posts_create') }}" class="btn btn-primary">Create Post</a>
-        {% endif %}
-    </div>
-    <form method="get" action="{{ path('app_posts') }}" class="mb-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex flex-wrap align-items-center">
-                    <strong class="me-3">Filter by categories:</strong>
-                    <div class="form-check me-4">
-                        <input class="form-check-input" type="checkbox" name="all" value="1" id="cat_all" {% if selectedCategories is empty and app.request.query.get('all') %}checked{% endif %}>
-                        <label class="form-check-label" for="cat_all">All</label>
-                    </div>
-                    {% for c in categories %}
-                        <div class="form-check me-3">
-                            <input class="form-check-input" type="checkbox" name="categories[]" value="{{ c.id }}" id="cat_{{ c.id }}" {% if c.id in selectedCategories %}checked{% endif %}>
-                            <label class="form-check-label" for="cat_{{ c.id }}">{{ c.name }}</label>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top: 80px; z-index: 10;">
+                {% if is_granted('ROLE_ADMIN') %}
+                    <div class="card shadow-sm mb-4 border-dark border-opacity-10">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3 text-dark d-flex align-items-center">
+                                <i class="bi bi-shield-check fs-5 me-2"></i>
+                                Admin Access
+                            </h6>
+                            <a href="{{ path('app_admin_dashboard') }}" class="btn btn-dark btn-sm w-100 rounded-pill shadow-sm">
+                                <i class="bi bi-speedometer2 me-1"></i> Admin Dashboard
+                            </a>
                         </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-outline-primary btn-sm ms-auto" aria-label="Apply">
-                        <i class="bi bi-funnel"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </form>
-    {% for p in posts %}
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <a href="{{ path('app_profile', { id: p.author.id }) }}">
-                        <img src="{{ p.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                    </a>
-                    <div>
-                        <div class="fw-bold">
-                            <a href="{{ path('app_profile', { id: p.author.id }) }}" class="text-decoration-none text-dark">{{ p.author.username }}</a>
-                        </div>
-                        <small class="text-muted">{{ p.createdAt|date('Y-m-d H:i') }} • in 
-                            {% for c in p.categories %}
-                                {% if not loop.first %}, {% endif %}{{ c.name }}
-                            {% endfor %}
-                        </small>
-                    </div>
-                </div>
-                <h5 class="mb-2">{{ p.title }}</h5>
-                <p class="mb-3">{{ p.content|slice(0, 250) }}{{ p.content|length > 250 ? '...' : '' }}</p>
-                {% if p.image %}
-                    <div class="mb-3">
-                        <img src="{{ p.image }}" class="post-image-thumbnail" alt="{{ p.title }}">
                     </div>
                 {% endif %}
-                <div class="d-flex align-items-center">
-                    {% set liked = app.user ? (userVotes[p.id] ?? null) == 'like' : false %}
-                    {% set disliked = app.user ? (userVotes[p.id] ?? null) == 'dislike' : false %}
-                    <form action="{{ path('app_posts_vote', { id: p.id, type: 'like', from: 'list' }) }}" method="POST" class="d-inline vote-form">
-                        <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
-                        <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent">
-                            <i class="bi bi-hand-thumbs-up{{ liked ? '-fill active' : '' }} vote-icon like"></i>
-                            <span class="ms-1 vote-count like-count">({{ counts[p.id].like ?? 0 }})</span>
-                        </button>
-                    </form>
-                    <form action="{{ path('app_posts_vote', { id: p.id, type: 'dislike', from: 'list' }) }}" method="POST" class="d-inline vote-form">
-                        <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
-                        <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent">
-                            <i class="bi bi-hand-thumbs-down{{ disliked ? '-fill active' : '' }} vote-icon dislike"></i>
-                            <span class="ms-1 vote-count dislike-count">({{ counts[p.id].dislike ?? 0 }})</span>
-                        </button>
-                    </form>
-                    <a href="{{ path('app_posts_show', { id: p.id }) }}#comments" class="me-3 d-flex align-items-center text-decoration-none">
-                        <i class="bi bi-chat-left-text"></i>
-                        <span class="ms-1">({{ commentTotals[p.id] ?? 0 }})</span>
-                    </a>
-                    <a href="{{ path('app_posts_show', { id: p.id }) }}" class="btn btn-link">Open</a>
-                    <span class="ms-auto text-muted">{{ p.views }} views</span>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">Blog / Categories</h6>
+                        <form method="get" action="{{ path('app_posts') }}" id="filterForm">
+                            <div class="list-group list-group-flush">
+                                <label class="list-group-item border-0 px-0 d-flex align-items-center">
+                                    <input class="form-check-input me-2" type="checkbox" name="all" value="1" id="cat_all" {% if selectedCategories is empty and app.request.query.get('all') %}checked{% endif %} onchange="this.form.submit()">
+                                    <span>All Posts</span>
+                                </label>
+                                {% for c in categories %}
+                                    <label class="list-group-item border-0 px-0 d-flex align-items-center">
+                                        <input class="form-check-input me-2" type="checkbox" name="categories[]" value="{{ c.id }}" id="cat_{{ c.id }}" {% if c.id in selectedCategories %}checked{% endif %} onchange="this.form.submit()">
+                                        <span>{{ c.name }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {% if app.user %}
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">I'm Following <span class="badge bg-light text-dark ms-1">{{ app.user.following|length }}</span></h6>
+                        <div class="list-group list-group-flush">
+                            {% for following in app.user.following|slice(0, 10) %}
+                                <a href="{{ path('app_profile', {id: following.id}) }}" class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
+                                    <img src="{{ following.profileImage ?: asset('images/default-avatar.svg') }}" 
+                                         class="rounded-circle border me-3" 
+                                         alt="{{ following.username }}"
+                                         style="width: 32px; height: 32px; object-fit: cover;">
+                                    <span class="small fw-bold text-dark">{{ following.username }}</span>
+                                </a>
+                            {% else %}
+                                <p class="text-muted small">You are not following anyone yet.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main Feed -->
+        <div class="col-lg-6">
+            <!-- Mobile Navigation / Categories (Visible only on mobile) -->
+            <div class="d-lg-none mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body py-2 overflow-auto">
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('app_posts', {all: 1}) }}" class="btn btn-sm {{ app.request.query.get('all') or selectedCategories is empty ? 'btn-primary' : 'btn-light' }} rounded-pill whitespace-nowrap">All</a>
+                            {% for c in categories %}
+                                <a href="{{ path('app_posts', {'categories[]': c.id}) }}" class="btn btn-sm {{ c.id in selectedCategories ? 'btn-primary' : 'btn-light' }} rounded-pill whitespace-nowrap">{{ c.name }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold mb-0">Activity Feed</h4>
+                {% if app.user %}
+                    <a href="{{ path('app_posts_create') }}" class="btn btn-primary rounded-pill btn-sm px-3">Create Post</a>
+                {% endif %}
+            </div>
+
+            {% if app.user %}
+            <!-- What's on your mind -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <img src="{{ app.user.profileImage ?: asset('images/default-avatar.svg') }}" class="avatar-md me-3" alt="">
+                        <a href="{{ path('app_posts_create') }}" class="form-control rounded-pill bg-light border-0 py-2 px-3 text-muted text-decoration-none">
+                            Share what's on your mind, {{ app.user.username }}...
+                        </a>
+                    </div>
+                    <div class="d-flex gap-3 text-muted small ms-5">
+                        <a href="{{ path('app_posts_create') }}" class="text-decoration-none text-muted"><i class="bi bi-image text-success me-1"></i> Photo</a>
+                        <a href="{{ path('app_posts_create') }}" class="text-decoration-none text-muted"><i class="bi bi-play-circle text-danger me-1"></i> Video</a>
+                        <a href="{{ path('app_posts_create') }}" class="text-decoration-none text-muted"><i class="bi bi-calendar-event text-warning me-1"></i> Event</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% for p in posts %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <a href="{{ path('app_profile', { id: p.author.id }) }}">
+                                <img src="{{ p.author.profileImage ?: asset('images/default-avatar.svg') }}" alt="Avatar" class="avatar-md me-2 border">
+                            </a>
+                            <div>
+                                <div class="fw-bold">
+                                    <a href="{{ path('app_profile', { id: p.author.id }) }}" class="text-decoration-none text-dark">{{ p.author.username }}</a>
+                                    <span class="text-muted small fw-normal">posted an update</span>
+                                </div>
+                                <small class="text-muted">{{ p.createdAt|date('M d, Y') }} • 
+                                    {% for c in p.categories %}
+                                        <span class="badge bg-light text-dark border-0">{{ c.name }}</span>
+                                    {% endfor %}
+                                </small>
+                            </div>
+                            <div class="ms-auto dropdown">
+                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                    <li><a class="dropdown-item" href="{{ path('app_posts_show', {id: p.id}) }}">View Post</a></li>
+                                    {% if app.user and app.user.id == p.author.id %}
+                                        <li><a class="dropdown-item" href="{{ path('app_posts_edit', {id: p.id}) }}">Edit</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <h5 class="card-title mb-2">{{ p.title }}</h5>
+                        <p class="mb-3">{{ p.content|slice(0, 300) }}{{ p.content|length > 300 ? '...' : '' }}</p>
+                        
+                        {% if p.image %}
+                            <div class="mb-3">
+                                <a href="{{ path('app_posts_show', {id: p.id}) }}">
+                                    <img src="{{ p.image }}" class="img-fluid rounded w-100" style="max-height: 400px; object-fit: cover;" alt="{{ p.title }}">
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <hr class="text-muted opacity-10">
+
+                        <div class="d-flex align-items-center">
+                            {% set liked = app.user ? (userVotes[p.id] ?? null) == 'like' : false %}
+                            {% set disliked = app.user ? (userVotes[p.id] ?? null) == 'dislike' : false %}
+                            
+                            <form action="{{ path('app_posts_vote', { id: p.id, type: 'like', from: 'list' }) }}" method="POST" class="d-inline vote-form">
+                                <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
+                                <button type="submit" class="btn btn-link me-3 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted small">
+                                    <i class="bi bi-hand-thumbs-up{{ liked ? '-fill text-primary' : '' }} vote-icon like fs-5 me-1"></i>
+                                    <span class="like-count">({{ counts[p.id].like ?? 0 }})</span>
+                                </button>
+                            </form>
+
+                            <form action="{{ path('app_posts_vote', { id: p.id, type: 'dislike', from: 'list' }) }}" method="POST" class="d-inline vote-form">
+                                <input type="hidden" name="_token" value="{{ csrf_token('vote_post') }}">
+                                <button type="submit" class="btn btn-link me-4 p-0 d-flex align-items-center text-decoration-none border-0 bg-transparent text-muted small">
+                                    <i class="bi bi-hand-thumbs-down{{ disliked ? '-fill text-danger' : '' }} vote-icon dislike fs-5 me-1"></i>
+                                    <span class="dislike-count">({{ counts[p.id].dislike ?? 0 }})</span>
+                                </button>
+                            </form>
+
+                            <a href="{{ path('app_posts_show', { id: p.id }) }}#comments" class="text-muted text-decoration-none small d-flex align-items-center me-4">
+                                <i class="bi bi-chat-left text-muted fs-5 me-1"></i>
+                                <span>Comment ({{ commentTotals[p.id] ?? 0 }})</span>
+                            </a>
+
+                            <div class="ms-auto text-muted small">
+                                <i class="bi bi-eye me-1"></i> {{ p.views }} views
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card card-body text-center py-5 shadow-sm">
+                    <i class="bi bi-journals fs-1 text-muted mb-3"></i>
+                    <p class="text-muted">No posts found matching your criteria.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top: 80px; z-index: 10;">
+                {% if app.user %}
+                    {% set completion = 0 %}
+                    {% if app.user.username %} {% set completion = completion + 34 %} {% endif %}
+                    {% if app.user.bio %} {% set completion = completion + 33 %} {% endif %}
+                    {% if app.user.profileImage %} {% set completion = completion + 33 %} {% endif %}
+                    
+                    {% if completion < 100 %}
+                        <div class="card shadow-sm mb-4 border-0" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">
+                            <div class="card-body text-white text-center py-4">
+                                <h6 class="fw-bold mb-3">Complete Your Profile</h6>
+                                <div class="position-relative d-inline-block mb-3">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="5" />
+                                        <circle cx="40" cy="40" r="35" fill="none" stroke="#ffffff" stroke-width="5" stroke-dasharray="220" stroke-dashoffset="{{ 220 - (220 * completion / 100) }}" />
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold">{{ completion }}%</div>
+                                </div>
+                                <p class="small opacity-75">You're almost there! Complete your profile to get more visibility.</p>
+                                <a href="{{ path('app_profile_edit') }}" class="btn btn-sm btn-light rounded-pill px-3 fw-bold">Finish Now</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card shadow-sm mb-4 border-0" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                            <div class="card-body text-white py-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+                                        <i class="bi bi-stars fs-4"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-0">Elite Member</h6>
+                                </div>
+                                <p class="small opacity-75 mb-3">Your profile is 100% complete! You're a top contributor in the Orbit community.</p>
+                                <div class="d-flex justify-content-between small border-top border-white border-opacity-25 pt-3">
+                                    <span><i class="bi bi-pencil-square me-1"></i> {{ app.user.posts|length }} Posts</span>
+                                    <span><i class="bi bi-chat-dots me-1"></i> {{ app.user.comments|length }} Comments</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">Recently Active Members</h6>
+                        <div class="list-group list-group-flush">
+                            {% for member in recentlyActiveUsers|default([]) %}
+                                <a href="{{ path('app_profile', { id: member.id }) }}" class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
+                                    <div class="position-relative me-3">
+                                        <img src="{{ member.profileImage ?: asset('images/default-avatar.svg') }}" 
+                                             class="rounded-circle border" 
+                                             alt="{{ member.username }}"
+                                             style="width: 38px; height: 38px; object-fit: cover;">
+                                        <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle" style="width: 10px; height: 10px;"></span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-dark">{{ member.username }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">Active recently</div>
+                                    </div>
+                                </a>
+                            {% else %}
+                                <p class="text-muted small">No active members found.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    {% else %}
-        <div class="alert alert-info">No posts yet.</div>
-    {% endfor %}
+    </div>
 </div>
 {% endblock %}

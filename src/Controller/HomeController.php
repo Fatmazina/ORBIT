@@ -16,7 +16,10 @@ class HomeController extends AbstractController
     #[Route('/', name: 'app_home')]
     public function index(): Response
     {
-        return $this->render('home/index.html.twig');
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_posts');
+        }
+        return $this->render('home/landing.html.twig');
     }
 
     #[Route('/following', name: 'app_following')]
@@ -47,15 +50,62 @@ class HomeController extends AbstractController
         $userVotes = [];
         $commentTotals = [];
 
-        foreach ($posts as $p) {
-            $counts[$p->getId()] = [
-                'like' => $voteRepo->count(['post' => $p, 'type' => 'like']),
-                'dislike' => $voteRepo->count(['post' => $p, 'type' => 'dislike']),
-            ];
-            $commentTotals[$p->getId()] = $em->getRepository(Comment::class)->count(['post' => $p, 'isArchived' => false]);
+        // Optimize: Pre-fetch counts and user votes for all posts to avoid N+1 queries
+        $postIds = array_map(fn($p) => $p->getId(), $posts);
+
+        if (!empty($postIds)) {
+            // Get vote counts
+            $voteCountsRaw = $em->getRepository(Vote::class)->createQueryBuilder('v')
+                ->select('IDENTITY(v.post) as postId, v.type, COUNT(v.id) as count')
+                ->where('v.post IN (:ids)')
+                ->setParameter('ids', $postIds)
+                ->groupBy('postId, v.type')
+                ->getQuery()
+                ->getResult();
             
-            $existing = $voteRepo->findOneBy(['post' => $p, 'author' => $user]);
-            $userVotes[$p->getId()] = $existing ? $existing->getType() : null;
+            foreach ($postIds as $id) {
+                $counts[$id] = ['like' => 0, 'dislike' => 0];
+            }
+            foreach ($voteCountsRaw as $row) {
+                $counts[$row['postId']][$row['type']] = (int) $row['count'];
+            }
+
+            // Get comment totals
+            $commentTotalsRaw = $em->getRepository(Comment::class)->createQueryBuilder('c')
+                ->select('IDENTITY(c.post) as postId, COUNT(c.id) as count')
+                ->where('c.post IN (:ids)')
+                ->andWhere('c.isArchived = :arch')
+                ->setParameter('ids', $postIds)
+                ->setParameter('arch', false)
+                ->groupBy('postId')
+                ->getQuery()
+                ->getResult();
+            
+            foreach ($postIds as $id) {
+                $commentTotals[$id] = 0;
+            }
+            foreach ($commentTotalsRaw as $row) {
+                $commentTotals[$row['postId']] = (int) $row['count'];
+            }
+
+            // Get user votes
+            if ($user instanceof User) {
+                $userVotesRaw = $em->getRepository(Vote::class)->createQueryBuilder('v')
+                    ->select('IDENTITY(v.post) as postId, v.type')
+                    ->where('v.post IN (:ids)')
+                    ->andWhere('v.author = :user')
+                    ->setParameter('ids', $postIds)
+                    ->setParameter('user', $user)
+                    ->getQuery()
+                    ->getResult();
+                
+                foreach ($postIds as $id) {
+                    $userVotes[$id] = null;
+                }
+                foreach ($userVotesRaw as $row) {
+                    $userVotes[$row['postId']] = $row['type'];
+                }
+            }
         }
 
         return $this->render('posts/index.html.twig', [
@@ -67,6 +117,7 @@ class HomeController extends AbstractController
             'selectedCategories' => [],
             'showAll' => false,
             'isFollowingFeed' => true,
+            'recentlyActiveUsers' => $em->getRepository(User::class)->findRecentlyActive(8),
         ]);
     }
 }

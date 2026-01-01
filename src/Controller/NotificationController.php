@@ -30,7 +30,7 @@ class NotificationController extends AbstractController
     }
 
     #[Route('/read-all', name: 'app_notifications_read_all', methods: ['GET'])]
-    public function readAll(EntityManagerInterface $em): Response
+    public function readAll(EntityManagerInterface $em, Request $request): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -46,6 +46,11 @@ class NotificationController extends AbstractController
         }
 
         $em->flush();
+
+        $referer = $request->headers->get('referer');
+        if ($referer) {
+            return $this->redirect($referer);
+        }
 
         return $this->redirect($this->generateUrl('app_home'));
     }

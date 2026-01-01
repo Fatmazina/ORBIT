@@ -31,13 +31,21 @@ class UserRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?User
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * @return User[]
+     */
+    public function findRecentlyActive(int $limit = 8): array
+    {
+        return $this->createQueryBuilder('u')
+            ->select('u')
+            ->addSelect('MAX(p.createdAt) AS HIDDEN lastPostDate')
+            ->innerJoin('u.posts', 'p')
+            ->where('u.isActive = :active')
+            ->setParameter('active', true)
+            ->groupBy('u.id')
+            ->orderBy('lastPostDate', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }
