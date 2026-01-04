@@ -306,6 +306,47 @@ class AdminController extends AbstractController
         return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
     }
 
+    #[Route('/reports/{id}/archive', name: 'app_admin_archive_report', methods: ['POST'])]
+    public function archiveReportedContent(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('report_action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        $report = $em->getRepository(Report::class)->find($id);
+        if (!$report) {
+            $this->addFlash('error', 'Report not found.');
+            return $this->redirectToRoute('app_admin_dashboard');
+        }
+
+        $contentArchived = false;
+        if ($report->getReportedPost()) {
+            $post = $report->getReportedPost();
+            $post->setIsArchived(true);
+            $post->setArchivedAt(new \DateTimeImmutable());
+            $contentArchived = true;
+        } elseif ($report->getReportedComment()) {
+            $comment = $report->getReportedComment();
+            $comment->setIsArchived(true);
+            $comment->setArchivedAt(new \DateTimeImmutable());
+            $contentArchived = true;
+        }
+
+        if ($contentArchived) {
+            $report->setStatus('resolved');
+            $report->setResolvedAt(new \DateTimeImmutable());
+            $report->setResolvedBy($this->getUser());
+            $em->flush();
+            $this->addFlash('success', 'Content archived and report resolved.');
+        } else {
+            $this->addFlash('error', 'No content found to archive.');
+        }
+
+        return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
+    }
+
     #[Route('/reports/mark-all-seen', name: 'app_admin_reports_mark_seen', methods: ['POST'])]
     public function markAllSeen(EntityManagerInterface $em): Response
     {

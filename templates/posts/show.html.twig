@@ -146,8 +146,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="fw-bold">{{ commentsCount }}</span>
                         </div>
 
-                        {% if app.user and app.user.id == post.author.id %}
-                            <div class="ms-auto d-flex gap-2">
+                        <div class="ms-auto d-flex gap-2">
+                            {% if app.user and app.user.id != post.author.id %}
+                                <button type="button" class="btn btn-outline-warning btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-url="{{ path('app_posts_report', { id: post.id }) }}" data-report-type="post">
+                                    <i class="bi bi-flag me-1"></i> Report
+                                </button>
+                            {% endif %}
+                            
+                            {% if app.user and app.user.id == post.author.id %}
                                 <a href="{{ path('app_posts_edit', { id: post.id }) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </a>
@@ -157,8 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <i class="bi bi-trash me-1"></i> Delete
                                     </button>
                                 </form>
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -200,19 +206,26 @@ document.addEventListener('DOMContentLoaded', function() {
                                         
                                         {% set isCommentAuthor = app.user and app.user.id == c.author.id %}
                                         {% set isPostAuthor = app.user and app.user.id == post.author.id %}
-                                        {% if isCommentAuthor or isPostAuthor %}
-                                            <div class="dropdown">
-                                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                        <div class="dropdown">
+                                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                {% if isCommentAuthor or isPostAuthor %}
                                                     <li>
                                                         <form action="{{ path('app_comments_delete', { postId: post.id, commentId: c.id }) }}" method="POST" onsubmit="return confirm('Delete this comment?')">
                                                             <input type="hidden" name="_token" value="{{ csrf_token('delete_comment') }}">
                                                             <button type="submit" class="dropdown-item text-danger">Delete</button>
                                                         </form>
                                                     </li>
-                                                </ul>
-                                            </div>
-                                        {% endif %}
+                                                {% endif %}
+                                                {% if app.user and not isCommentAuthor %}
+                                                    <li>
+                                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-url="{{ path('app_comments_report', { postId: post.id, commentId: c.id }) }}" data-report-type="comment">
+                                                            <i class="bi bi-flag me-1"></i> Report
+                                                        </button>
+                                                    </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
                                     </div>
                                     <p class="mb-2 text-secondary">{{ c.content }}</p>
                                     

@@ -142,7 +142,7 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
         }
         $reason = (string) $request->request->get('reason', '');
-        $allowed = ['Spam', 'Harassment or hate', 'Pornography', 'Violence', 'Misinformation', 'Other'];
+        $allowed = ['Spam', 'Harassment or hate', 'Violence', 'Misinformation', 'Other'];
         if ($reason === '' || !in_array($reason, $allowed, true)) {
             $this->addFlash('error', 'Please select a valid reason.');
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);
@@ -607,7 +607,7 @@ class PostController extends AbstractController
         }
 
         $reason = trim((string) $request->request->get('reason', ''));
-        $allowed = ['Spam', 'Harassment or hate', 'Pornography', 'Violence', 'Misinformation', 'Other'];
+        $allowed = ['Spam', 'Harassment or hate', 'Violence', 'Misinformation', 'Other'];
         if ($reason === '' || !in_array($reason, $allowed, true)) {
             $this->addFlash('error', 'Please select a valid reason.');
             return $this->redirectToRoute('app_posts_show', ['id' => $post->getId()]);

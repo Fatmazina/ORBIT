@@ -175,9 +175,6 @@
                     <a href="#analytics" class="admin-nav-link active" data-section="analytics">
                         <i class="bi bi-graph-up"></i> Analytics
                     </a>
-                    <a href="#reports-analysis" class="admin-nav-link" onclick="document.querySelector('[data-section=\'analytics\']').click(); setTimeout(() => document.getElementById('reports-analysis-section').scrollIntoView({behavior: 'smooth'}), 100)">
-                        <i class="bi bi-pie-chart"></i> Reports Analysis
-                    </a>
                     <a href="#users" class="admin-nav-link" data-section="users">
                         <i class="bi bi-people"></i> Users
                     </a>
@@ -314,58 +311,6 @@
                                     <div class="d-flex justify-content-between small">
                                         <span>Unverified Users</span>
                                         <span class="fw-bold text-muted">{{ chartData.verification[1].count }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reports Analysis Section -->
-                <div class="row g-4 mb-4" id="reports-analysis-section">
-                    <div class="col-12">
-                        <div class="card shadow-sm border-0">
-                            <div class="card-body p-4">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div>
-                                        <h5 class="mb-1 fw-bold">Reports Analysis</h5>
-                                        <p class="text-muted small mb-0">Deep dive into why items are being reported</p>
-                                    </div>
-                                    <a href="#reports" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="document.querySelector('[data-section=\'reports\']').click()">
-                                        View All Reports
-                                    </a>
-                                </div>
-                                <div class="row g-4">
-                                    <div class="col-md-4">
-                                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Reports by Reason</h6>
-                                        <div style="height: 200px;">
-                                            <canvas id="reportsReasonChart"></canvas>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Reports by Status</h6>
-                                        <div style="height: 200px;">
-                                            <canvas id="reportsStatusChart"></canvas>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Recent Activity</h6>
-                                        <div class="list-group list-group-flush small">
-                                            {% for r in reports|slice(0, 4) %}
-                                                <div class="list-group-item px-0 border-0 mb-2">
-                                                    <div class="d-flex w-100 justify-content-between">
-                                                        <h6 class="mb-1 fw-bold text-truncate" style="max-width: 150px;">
-                                                            {{ r.reportedPost ? r.reportedPost.title : (r.reportedComment ? r.reportedComment.content|slice(0, 20) ~ '...' : 'Unknown') }}
-                                                        </h6>
-                                                        <small class="text-muted">{{ r.createdAt|date('H:i') }}</small>
-                                                    </div>
-                                                    <p class="mb-1 text-muted">{{ r.reason }}</p>
-                                                    <small class="text-primary">Reported by {{ r.reporter.username }}</small>
-                                                </div>
-                                            {% else %}
-                                                <p class="text-center text-muted py-4">No recent reports</p>
-                                            {% endfor %}
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -613,6 +558,13 @@
                                                         </a>
                                                     {% endif %}
                                                     
+                                                    <form action="{{ path('app_admin_archive_report', { id: r.id }) }}" method="POST">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token('report_action') }}">
+                                                        <button type="submit" class="btn btn-sm btn-warning rounded-pill px-3 d-flex align-items-center" onclick="return confirm('Archive this content and resolve the report?')">
+                                                            <i class="bi bi-archive me-1"></i> Archive
+                                                        </button>
+                                                    </form>
+                                                    
                                                     <form action="{{ path('app_admin_resolve_report', { id: r.id }) }}" method="POST">
                                                         <input type="hidden" name="_token" value="{{ csrf_token('report_action') }}">
                                                         <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 d-flex align-items-center">
@@ -827,8 +779,6 @@
             const catData = {{ chartData.categories|json_encode|raw }};
             const engData = {{ chartData.engagement|json_encode|raw }};
             const verData = {{ chartData.verification|json_encode|raw }};
-            const reportReasonData = {{ chartData.reportsByReason|json_encode|raw }};
-            const reportStatusData = {{ chartData.reportsByStatus|json_encode|raw }};
 
             const colors = {
                 cyan: '#00d2ff',
@@ -957,51 +907,6 @@
                         plugins: { 
                             legend: { display: false } 
                         }
-                    }
-                });
-            }
-
-            // Report Reason Chart
-            const reasonCtx = document.getElementById('reportsReasonChart');
-            if (reasonCtx) {
-                new Chart(reasonCtx, {
-                    type: 'polarArea',
-                    data: {
-                        labels: reportReasonData.map(d => d.reason),
-                        datasets: [{
-                            data: reportReasonData.map(d => d.count),
-                            backgroundColor: [colors.cyanFade, colors.purpleFade, colors.pinkFade, colors.orangeFade],
-                            borderColor: [colors.cyan, colors.purple, colors.pink, colors.orange],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { r: { ticks: { display: false } } },
-                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } }
-                    }
-                });
-            }
-
-            // Report Status Chart
-            const statusCtx = document.getElementById('reportsStatusChart');
-            if (statusCtx) {
-                new Chart(statusCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: reportStatusData.map(d => d.status),
-                        datasets: [{
-                            data: reportStatusData.map(d => d.count),
-                            backgroundColor: [colors.orange, colors.cyan, colors.gray],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '70%',
-                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } }
                     }
                 });
             }
