@@ -567,8 +567,8 @@
                                                     
                                                     <form action="{{ path('app_admin_resolve_report', { id: r.id }) }}" method="POST">
                                                         <input type="hidden" name="_token" value="{{ csrf_token('report_action') }}">
-                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 d-flex align-items-center">
-                                                            <i class="bi bi-check-circle me-1"></i> Resolve
+                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 d-flex align-items-center" onclick="return confirm('Dismiss this report without archiving?')">
+                                                            <i class="bi bi-check-circle me-1"></i> Dismiss
                                                         </button>
                                                     </form>
                                                 </div>

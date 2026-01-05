@@ -26,9 +26,8 @@ if (!$mailer) {
     exit(1);
 }
 $to = $argv[1] ?? getenv('TEST_EMAIL') ?? 'you@example.com';
-$email = (new Email())
     ->from('noreply@orbit-forum.com')
-    ->to($to)
+    ->from('noreply@orbit-forum.com')
     ->subject('Test email from Orbit')
     ->text('This is a test email from Orbit application.');
 try {

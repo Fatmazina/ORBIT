@@ -23,6 +23,7 @@ framework:
         routing:
             # For testing/quick feedback you can send emails synchronously so they appear immediately in Mailtrap.
             # Change back to `async` for production/background processing.
+            # Change back to `async` for production/background processing.
             Symfony\Component\Mailer\Messenger\SendEmailMessage: sync
             Symfony\Component\Notifier\Message\ChatMessage: async
             Symfony\Component\Notifier\Message\SmsMessage: async

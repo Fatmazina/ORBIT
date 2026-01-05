@@ -20,7 +20,7 @@ final class Version20251229191656 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE post ADD is_archived TINYINT(1) NOT NULL DEFAULT 0, ADD archived_at DATETIME DEFAULT NULL');
+        $this->addSql('ALTER TABLE post ADD is_archived TINYINT NOT NULL, ADD archived_at DATETIME DEFAULT NULL');
     }
 
     public function down(Schema $schema): void

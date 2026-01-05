@@ -301,13 +301,13 @@ class AdminController extends AbstractController
             $report->setResolvedAt(new \DateTimeImmutable());
             $report->setResolvedBy($this->getUser());
             $em->flush();
-            $this->addFlash('success', 'Report marked as resolved.');
+            $this->addFlash('success', 'Report dismissed (marked as resolved).');
         }
         return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
     }
 
     #[Route('/reports/{id}/archive', name: 'app_admin_archive_report', methods: ['POST'])]
-    public function archiveReportedContent(int $id, Request $request, EntityManagerInterface $em): Response
+    public function archiveReport(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         if (!$this->isCsrfTokenValid('report_action', $request->request->get('_token'))) {
@@ -316,34 +316,25 @@ class AdminController extends AbstractController
         }
 
         $report = $em->getRepository(Report::class)->find($id);
-        if (!$report) {
-            $this->addFlash('error', 'Report not found.');
-            return $this->redirectToRoute('app_admin_dashboard');
-        }
-
-        $contentArchived = false;
-        if ($report->getReportedPost()) {
-            $post = $report->getReportedPost();
-            $post->setIsArchived(true);
-            $post->setArchivedAt(new \DateTimeImmutable());
-            $contentArchived = true;
-        } elseif ($report->getReportedComment()) {
-            $comment = $report->getReportedComment();
-            $comment->setIsArchived(true);
-            $comment->setArchivedAt(new \DateTimeImmutable());
-            $contentArchived = true;
-        }
-
-        if ($contentArchived) {
+        if ($report) {
             $report->setStatus('resolved');
             $report->setResolvedAt(new \DateTimeImmutable());
             $report->setResolvedBy($this->getUser());
-            $em->flush();
-            $this->addFlash('success', 'Content archived and report resolved.');
-        } else {
-            $this->addFlash('error', 'No content found to archive.');
-        }
 
+            if ($report->getReportedPost()) {
+                $post = $report->getReportedPost();
+                $post->setIsArchived(true);
+                $post->setArchivedAt(new \DateTimeImmutable());
+                $this->addFlash('success', 'Post archived and report resolved.');
+            } elseif ($report->getReportedComment()) {
+                $comment = $report->getReportedComment();
+                $comment->setIsArchived(true);
+                $comment->setArchivedAt(new \DateTimeImmutable());
+                $this->addFlash('success', 'Comment archived and report resolved.');
+            }
+            
+            $em->flush();
+        }
         return $this->redirect($this->generateUrl('app_admin_dashboard') . '#reports');
     }
 
