@@ -24,7 +24,7 @@ class DevContentSecurityPolicyListener implements EventSubscriberInterface
         $csp = $response->headers->get('Content-Security-Policy');
 
         if (!$csp) {
-            $csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' cdn.jsdelivr.net";
+            $csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net code.tidio.co; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: *.tidio.co; font-src 'self' cdn.jsdelivr.net; connect-src 'self' *.tidio.co";
         } else {
             // Add unsafe-inline and cdn.jsdelivr.net to script-src if it exists
             if (str_contains($csp, 'script-src')) {
@@ -34,22 +34,30 @@ class DevContentSecurityPolicyListener implements EventSubscriberInterface
                 if (!str_contains($csp, 'cdn.jsdelivr.net')) {
                     $csp = str_ireplace('script-src', "script-src cdn.jsdelivr.net", $csp);
                 }
+                if (!str_contains($csp, 'code.tidio.co')) {
+                    $csp = str_ireplace('script-src', "script-src code.tidio.co", $csp);
+                }
             } else {
-                $csp .= "; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net";
+                $csp .= "; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net code.tidio.co";
             }
 
-            // Add unsafe-inline and cdn.jsdelivr.net to style-src if it exists
-            if (str_contains($csp, 'style-src')) {
-                if (!str_contains($csp, "'unsafe-inline'")) {
-                    $csp = str_ireplace('style-src', "style-src 'unsafe-inline'", $csp);
-                }
-                if (!str_contains($csp, 'cdn.jsdelivr.net')) {
-                    $csp = str_ireplace('style-src', "style-src cdn.jsdelivr.net", $csp);
+            // Add connect-src for Tidio
+            if (str_contains($csp, 'connect-src')) {
+                if (!str_contains($csp, '*.tidio.co')) {
+                    $csp = str_ireplace('connect-src', "connect-src *.tidio.co", $csp);
                 }
             } else {
-                $csp .= "; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net";
+                $csp .= "; connect-src 'self' *.tidio.co";
             }
-        }
+
+            // Add img-src for Tidio
+            if (str_contains($csp, 'img-src')) {
+                if (!str_contains($csp, '*.tidio.co')) {
+                    $csp = str_ireplace('img-src', "img-src *.tidio.co", $csp);
+                }
+            } else {
+                $csp .= "; img-src 'self' data: *.tidio.co";
+            }
 
         $response->headers->set('Content-Security-Policy', $csp);
     }
