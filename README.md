@@ -5,6 +5,7 @@ publish posts, organize them with categories, comment on discussions, vote on
 content, follow other users, and receive notifications. The application also
 includes profile pages, search, image uploads, authentication, and an
 administrator area.
+<img width="1197" height="820" alt="image" src="https://github.com/user-attachments/assets/34e5f031-14b8-426f-81ae-4f691e081d6a" />
 
 ## Technology
 
